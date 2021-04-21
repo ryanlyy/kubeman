@@ -25,40 +25,42 @@ git clone https://github.com/brendangregg/FlameGraph.git
 ## go tool pprof basic
 * Enable pprof
   
-The package is typically only imported for the side effect of registering its HTTP handlers. The handled paths all begin with /debug/pprof/.
+  The package is typically only imported for the side effect of registering its HTTP handlers. The handled paths all begin with /debug/pprof/.
 
-To use pprof, link this package into your program:
+  To use pprof, link this package into your program:
+  ```
+  import _ "net/http/pprof"
+  ```
 
-import _ "net/http/pprof"
-
-If your application is not already running an http server, you need to start one. Add "net/http" and "log" to your imports and the following code to your main function:
-
-go func() {
-	log.Println(http.ListenAndServe("localhost:6060", nil))
-}()
+  If your application is not already running an http server, you need to start one. Add "net/http" and "log" to your imports and the following code to your main function:
+  ```
+  go func() {
+	  log.Println(http.ListenAndServe("localhost:6060", nil))
+  }()
+  ```
 
 * Profiles Types
-```
-goroutine    - stack traces of all current goroutines
-heap         - a sampling of all heap allocations
-threadcreate - stack traces that led to the creation of new OS threads
-block        - stack traces that led to blocking on synchronization primitives
-mutex        - stack traces of holders of contended mutexes
-```
+  ```
+  goroutine    - stack traces of all current goroutines
+  heap         - a sampling of all heap allocations
+  threadcreate - stack traces that led to the creation of new OS threads
+  block        - stack traces that led to blocking on synchronization primitives
+  mutex        - stack traces of holders of contended mutexes
+  ```
 * Profile API
-go tool pprof
-```
-    http://localhost:port/debug/pprof/goroutine
-    http://localhost:port/debug/pprof/heap
-    http://localhost:port/debug/pprof/threadcreate
-    http://localhost:port/debug/pprof/block
-    http://localhost:port/debug/pprof/mutex
+  go tool pprof
+  ```
+  http://localhost:port/debug/pprof/goroutine
+  http://localhost:port/debug/pprof/heap
+  http://localhost:port/debug/pprof/threadcreate
+  http://localhost:port/debug/pprof/block
+  http://localhost:port/debug/pprof/mutex
 
-and also 2 more: the CPU profile and the CPU trace.
+  and also 2 more: the CPU profile and the CPU trace.
 
-    http://localhost:port/debug/pprof/profile
-    http://localhost:port/debug/pprof/trace?seconds=5  (go tool trace)
-```
+  http://localhost:port/debug/pprof/profile
+  http://localhost:port/debug/pprof/trace?seconds=5  (go tool trace)
+  ```
 
 * pprof kubelet dump env
   ```
@@ -67,25 +69,25 @@ and also 2 more: the CPU profile and the CPU trace.
 
 ## pprof heap
 * Dump heap profile
-```
- go tool pprof --raw --output kubelet.heap http://127.0.0.1:8001/api/v1/nodes/foss-ssc-1/proxy/debug/pprof/heap?seconds=60
+  ```
+  go tool pprof --raw --output kubelet.heap http://127.0.0.1:8001/api/v1/nodes/foss-ssc-1/proxy/debug/pprof/heap?seconds=60
 
- curl -o kubelet.gz http://127.0.0.1:8001/api/v1/nodes/foss-ssc-1/proxy/debug/pprof/heap
-```
+  curl -o kubelet.gz http://127.0.0.1:8001/api/v1/nodes/foss-ssc-1/proxy/debug/pprof/heap
+  ```
 * Analyzing heap profile interactively
-```
- go tool pprof /root/pprof/pprof.kubelet.alloc_objects.alloc_space.inuse_objects.inuse_space.003.pb.gz
-```
+  ```
+  go tool pprof /root/pprof/pprof.kubelet.alloc_objects.alloc_space.inuse_objects.inuse_space.003.pb.gz
+  ```
 * Analyzing heap profile bash mode
-```
-go tool pprof -top /root/pprof/pprof.kubelet.alloc_objects.alloc_space.inuse_objects.inuse_space.003.pb.gz
-```
+  ```
+  go tool pprof -top /root/pprof/pprof.kubelet.alloc_objects.alloc_space.inuse_objects.inuse_space.003.pb.gz
+  ```
 
 * Analyzing heap profile in png
-```
-go tool pprof -png /root/pprof/pprof.kubelet.alloc_objects.alloc_space.inuse_objects.inuse_space.001.pb.gz > kubelet.png
-```
-![Heap Profile inuse_space Example](../pics/kubelet-heap.png)
+  ```
+  go tool pprof -png /root/pprof/pprof.kubelet.alloc_objects.alloc_space.inuse_objects.inuse_space.001.pb.gz > kubelet.png
+  ```
+  ![Heap Profile inuse_space Example](../pics/kubelet-heap.png)
 
 
   * alloc_space vs inuse_space
@@ -157,7 +159,7 @@ go tool pprof -png /root/pprof/pprof.kubelet.alloc_objects.alloc_space.inuse_obj
   ```
 * Analyzing trace
   ```
-  [root@foss-ssc-1 pprof]# go tool trace -http='135.252.135.241:7060' kubelet.trace
+  [root@foss-ssc-1 pprof]# go tool trace -http='ipaddr:port' kubelet.trace
   2021/04/21 13:04:04 Parsing trace...
   2021/04/21 13:04:05 Splitting trace...
   2021/04/21 13:04:07 Opening browser. Trace viewer is listening on http://135.252.135.241:7060
