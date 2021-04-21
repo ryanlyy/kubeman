@@ -6,6 +6,13 @@ Kubernetes Debugging
   - [pprof heap](#pprof-heap)
   - [pprof Profile](#pprof-profile)
   - [pprof Trace](#pprof-trace)
+- [Monitoring, Logging and Debugging](#monitoring-logging-and-debugging)
+  - [Debuggin gwith an ephemeral containers](#debuggin-gwith-an-ephemeral-containers)
+  - [Feature Gate](#feature-gate)
+  - [Service Debugging](#service-debugging)
+  - [Delete Terminating Stuck Pod](#delete-terminating-stuck-pod)
+  - [Events Debugging](#events-debugging)
+  - [dd](#dd)
 - [References](#references)
 
 # golang env
@@ -165,7 +172,140 @@ git clone https://github.com/brendangregg/FlameGraph.git
   2021/04/21 13:04:07 Opening browser. Trace viewer is listening on http://135.252.135.241:7060
   ```
 
-![Service Expose](../pics/service.JPG)
+# Monitoring, Logging and Debugging
+## Debuggin gwith an ephemeral containers
+Ephemeral containers are useful for interactive troubleshooting when kubectl exec is insufficient because a container has crashed or a container image doesn't include debugging utilities. 
+
+require the EphemeralContainers feature gate enabled in your cluster and kubectl version v1.18 or later
+
+## Feature Gate
+
+https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/
+
+```
+kube-apiserver --help
+
+--feature-gates mapStringBool
+  A set of key=value pairs that describe feature gates for alpha/experimental features. Options are:
+  APIListChunking=true|false (BETA - default=true)
+  APIPriorityAndFairness=true|false (ALPHA - default=false)
+  APIResponseCompression=true|false (BETA - default=true)
+  AllAlpha=true|false (ALPHA - default=false)
+  AllBeta=true|false (BETA - default=false)
+  AllowInsecureBackendProxy=true|false (BETA - default=true)
+  AnyVolumeDataSource=true|false (ALPHA - default=false)
+  AppArmor=true|false (BETA - default=true)
+  BalanceAttachedNodeVolumes=true|false (ALPHA - default=false)
+  BoundServiceAccountTokenVolume=true|false (ALPHA - default=false)
+  CPUManager=true|false (BETA - default=true)
+  CRIContainerLogRotation=true|false (BETA - default=true)
+  CSIInlineVolume=true|false (BETA - default=true)
+  CSIMigration=true|false (BETA - default=true)
+  CSIMigrationAWS=true|false (BETA - default=false)
+  CSIMigrationAWSComplete=true|false (ALPHA - default=false)
+  CSIMigrationAzureDisk=true|false (ALPHA - default=false)
+  CSIMigrationAzureDiskComplete=true|false (ALPHA - default=false)
+  CSIMigrationAzureFile=true|false (ALPHA - default=false)
+  CSIMigrationAzureFileComplete=true|false (ALPHA - default=false)
+  CSIMigrationGCE=true|false (BETA - default=false)
+  CSIMigrationGCEComplete=true|false (ALPHA - default=false)
+  CSIMigrationOpenStack=true|false (BETA - default=false)
+  CSIMigrationOpenStackComplete=true|false (ALPHA - default=false)
+  ConfigurableFSGroupPolicy=true|false (ALPHA - default=false)
+  CustomCPUCFSQuotaPeriod=true|false (ALPHA - default=false)
+  DefaultIngressClass=true|false (BETA - default=true)
+  DevicePlugins=true|false (BETA - default=true)
+  DryRun=true|false (BETA - default=true)
+  DynamicAuditing=true|false (ALPHA - default=false)
+  DynamicKubeletConfig=true|false (BETA - default=true)
+  EndpointSlice=true|false (BETA - default=true)
+  EndpointSliceProxying=true|false (ALPHA - default=false)
+  EphemeralContainers=true|false (ALPHA - default=false)
+  EvenPodsSpread=true|false (BETA - default=true)
+  ExpandCSIVolumes=true|false (BETA - default=true)
+  ExpandInUsePersistentVolumes=true|false (BETA - default=true)
+  ExpandPersistentVolumes=true|false (BETA - default=true)
+  ExperimentalHostUserNamespaceDefaulting=true|false (BETA - default=false)
+  HPAScaleToZero=true|false (ALPHA - default=false)
+  HugePageStorageMediumSize=true|false (ALPHA - default=false)
+  HyperVContainer=true|false (ALPHA - default=false)
+  IPv6DualStack=true|false (ALPHA - default=false)
+  ImmutableEphemeralVolumes=true|false (ALPHA - default=false)
+  KubeletPodResources=true|false (BETA - default=true)
+  LegacyNodeRoleBehavior=true|false (ALPHA - default=true)
+  LocalStorageCapacityIsolation=true|false (BETA - default=true)
+  LocalStorageCapacityIsolationFSQuotaMonitoring=true|false (ALPHA - default=false)
+  NodeDisruptionExclusion=true|false (ALPHA - default=false)
+  NonPreemptingPriority=true|false (ALPHA - default=false)
+  PodDisruptionBudget=true|false (BETA - default=true)
+  PodOverhead=true|false (BETA - default=true)
+  ProcMountType=true|false (ALPHA - default=false)
+  QOSReserved=true|false (ALPHA - default=false)
+  RemainingItemCount=true|false (BETA - default=true)
+  RemoveSelfLink=true|false (ALPHA - default=false)
+  ResourceLimitsPriorityFunction=true|false (ALPHA - default=false)
+  RotateKubeletClientCertificate=true|false (BETA - default=true)
+  RotateKubeletServerCertificate=true|false (BETA - default=true)
+  RunAsGroup=true|false (BETA - default=true)
+  RuntimeClass=true|false (BETA - default=true)
+  SCTPSupport=true|false (ALPHA - default=false)
+  SelectorIndex=true|false (ALPHA - default=false)
+  ServerSideApply=true|false (BETA - default=true)
+  ServiceAccountIssuerDiscovery=true|false (ALPHA - default=false)
+  ServiceAppProtocol=true|false (ALPHA - default=false)
+  ServiceNodeExclusion=true|false (ALPHA - default=false)
+  ServiceTopology=true|false (ALPHA - default=false)
+  StartupProbe=true|false (BETA - default=true)
+  StorageVersionHash=true|false (BETA - default=true)
+  SupportNodePidsLimit=true|false (BETA - default=true)
+  SupportPodPidsLimit=true|false (BETA - default=true)
+  Sysctls=true|false (BETA - default=true)
+  TTLAfterFinished=true|false (ALPHA - default=false)
+  TokenRequest=true|false (BETA - default=true)
+  TokenRequestProjection=true|false (BETA - default=true)
+  TopologyManager=true|false (BETA - default=true)
+  ValidateProxyRedirects=true|false (BETA - default=true)
+  VolumeSnapshotDataSource=true|false (BETA - default=true)
+  WinDSR=true|false (ALPHA - default=false)
+  WinOverlay=true|false (ALPHA - default=false)
+```
+## Service Debugging
+* Check if endpoints exist for that service
+  ```
+  [root@foss-ssc-1 pprof]# kubectl get endpoints docker-registry-service
+  NAME                      ENDPOINTS              AGE
+  docker-registry-service   192.168.150.127:5000   192d
+  ```
+* iptable-save to check service for non headless
+  ```
+  [root@foss-ssc-1 pprof]# iptables-save | grep docker-registry-service
+  -A KUBE-SERVICES ! -s 192.168.0.0/16 -d 10.110.136.53/32 -p tcp -m comment --comment "default/docker-registry-service: cluster IP" -m tcp --dport 3000 -j KUBE-MARK-MASQ
+  -A KUBE-SERVICES -d 10.110.136.53/32 -p tcp -m comment --comment "default/docker-registry-service: cluster IP" -m tcp --dport 3000 -j KUBE-SVC-IOQWXJDBNWAU5JMW
+  -A KUBE-NODEPORTS -p tcp -m comment --comment "default/docker-registry-service:" -m tcp --dport 32100 -j KUBE-MARK-MASQ
+  -A KUBE-NODEPORTS -p tcp -m comment --comment "default/docker-registry-service:" -m tcp --dport 32100 -j KUBE-SVC-IOQWXJDBNWAU5JMW
+  -A KUBE-SVC-IOQWXJDBNWAU5JMW -m comment --comment "default/docker-registry-service:" -j KUBE-SEP-EMPLNE5PZQ7LTPXI
+  -A KUBE-SEP-EMPLNE5PZQ7LTPXI -s 192.168.150.127/32 -m comment --comment "default/docker-registry-service:" -j KUBE-MARK-MASQ
+  -A KUBE-SEP-EMPLNE5PZQ7LTPXI -p tcp -m comment --comment "default/docker-registry-service:" -m tcp -j DNAT --to-destination 192.168.150.127:5000
+  ```
+* dig
+
+## Delete Terminating Stuck Pod
+```
+kubectl delete pod <PODNAME> --grace-period=0 --force --namespace <NAMESPACE>
+```
+if still stuck try:
+```
+kubectl patch pod <pod> -p '{"metadata":{"finalizers":null}}'
+```
+or  restart container
+
+
+## Events Debugging
+  ```
+  kubectl get events --all-namespaces
+  kubectl describe node/deployment/pod...
+  ```
+## dd
 
 # References
 * https://www.cnblogs.com/zerchin/p/kubernetes.html
