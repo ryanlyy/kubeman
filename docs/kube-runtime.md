@@ -5,8 +5,11 @@ This artical is used to summary all changes when docker is replaced by container
   - [Runtime Class](#runtime-class)
 - [Operation and Debugging](#operation-and-debugging)
   - [Command Comparision](#command-comparision)
+  - [CRIO Tools](#crio-tools)
   - [Debugging](#debugging)
+  - [No Node Access Environment](#no-node-access-environment)
 - [Application](#application)
+- [NTAS Impact](#ntas-impact)
 
 # Deployment
 
@@ -91,11 +94,30 @@ You can also use RuntimeClass to run different Pods with the same container runt
 |N/A|N/A|N/A|N/A|volume |
 | Container|wait |N/A |D | wait |
 
+## CRIO Tools
+Tools include:
+  * crictl - For troubleshooting and working directly with CRI-O container engines
+  * runc - For running container images
+  * podman - For managing pods and container images (run, stop, start, ps, attach, exec, etc.) outside of the container engine
+  * buildah - For building, pushing and signing container images
+  * skopeo - For copying, inspecting, deleting, and signing images
+
 ##  Debugging
 | Debugging | Docker | containerd | crio | podman | 
 |--------|--------|--------|--------|--------|
+|Build Image | | | | | 
+|docker exec -u | | | | |
+|
+
+## No Node Access Environment
+
 
 # Application 
 | Impact | Docker | containerd | crio | podman | 
 |--------|--------|--------|--------|--------|
 
+
+# NTAS Impact
+* CI Pipeline
+* Mr Wolfe
+* 
