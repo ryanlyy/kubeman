@@ -401,8 +401,11 @@ Defaulted container "alpine-kata-top1" out of: alpine-kata-top1, alpine-kata-top
 
 Kata VM Networking
 ![Kata VM Networking Connectivity](../pics/kata-networking.JPG)
+![Kata Networking Namespaces](../pics/kata-netns.JPG)
 
- Kata Containers will create a tap device for the VM, tap0_kata, and setup a TC redirection filter to mirror traffic from eth0's ingress to tap0_kata's egress, and a second to mirror traffic from tap0_kata's ingress to eth0's egress
+https://pkg.go.dev/github.com/kata-containers/runtime/virtcontainers#readme-networking
+
+ Kata Containers will create a tap device for the VM, tap0_kata, and setup a TC redirection filter to mirror traffic from eth0's ingress to tap0_kata's egress, and a second to mirror traffic from tap0_kata's ingress to eth0's egress. (above pic is using bridge the latest is using tc redirection role)
 
 ```
 [root@foss-ssc-6 crio]# ip netns
@@ -410,6 +413,17 @@ cni-a491f8b4-4490-1d8c-a7b0-70ae17166323 (id: 8) (default runc pod net namespace
 cni-cbd86204-54d7-e0fa-8c32-b47b32af815a (id: 3) (kata VM net namespaces)
 cni-f6c8e979-99e8-e6d0-06d4-b6f13578b4a6 (id: 7) (default runc coredns pod net namespaces)
 cni-76462936-ccf7-ae49-dabe-8b6031fdc460 (id: 6) (default runc coredns pod net namespaces)
+```
+
+```
+[root@foss-ssc-6 ns]# ip netns pids cni-ffbddab3-69fb-42dc-4534-d72d755f7958
+2508754
+[root@foss-ssc-6 ns]# ps -ef | grep qemu
+root     2508754       1  0 16:18 ?        00:01:23 /usr/libexec/qemu-kvm -name sandbox-51eacfaf94c8195f4f819a5ca7ba7c5ab73c74f8ed9249af46d142791c051bbc -uuid f27b7464-a693-43b9-b0cc-40eb962dea09 -machine q35,accel=kvm,kernel_irqchip -cpu host,pmu=off -qmp unix:/run/vc/vm/51eacfaf94c8195f4f819a5ca7ba7c5ab73c74f8ed9249af46d142791c051bbc/qmp.sock,server,nowait -m 2048M,slots=10,maxmem=32938M -device pci-bridge,bus=pcie.0,id=pci-bridge-0,chassis_nr=1,shpc=on,addr=2,romfile= -device virtio-serial-pci,disable-modern=false,id=serial0,romfile= -device virtconsole,chardev=charconsole0,id=console0 -chardev socket,id=charconsole0,path=/run/vc/vm/51eacfaf94c8195f4f819a5ca7ba7c5ab73c74f8ed9249af46d142791c051bbc/console.sock,server,nowait -device virtio-scsi-pci,id=scsi0,disable-modern=false,romfile= -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0,romfile= -device vhost-vsock-pci,disable-modern=false,vhostfd=3,id=vsock-3421461778,guest-cid=3421461778,romfile= -chardev socket,id=char-7b0775a90a1ad47c,path=/run/vc/vm/51eacfaf94c8195f4f819a5ca7ba7c5ab73c74f8ed9249af46d142791c051bbc/vhost-fs.sock -device vhost-user-fs-pci,chardev=char-7b0775a90a1ad47c,tag=kataShared,romfile= -netdev tap,id=network-0,vhost=on,vhostfds=4,fds=5 -device driver=virtio-net-pci,netdev=network-0,mac=0e:84:2b:37:4b:74,disable-modern=false,mq=on,vectors=4,romfile= -rtc base=utc,driftfix=slew,clock=host -global kvm-pit.lost_tick_policy=discard -vga none -no-user-config -nodefaults -nographic --no-reboot -daemonize -object memory-backend-file,id=dimm1,size=2048M,mem-path=/dev/shm,share=on -numa node,memdev=dimm1 -kernel /usr/lib/modules/4.18.0-240.22.1.el8_3.x86_64/vmlinuz -initrd /var/cache/kata-containers/osbuilder-images/4.18.0-240.22.1.el8_3.x86_64/"centos"-kata-4.18.0-240.22.1.el8_3.x86_64.initrd -append tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k console=hvc0 console=hvc1 cryptomgr.notests net.ifnames=0 pci=lastbus=0 quiet panic=1 nr_cpus=16 scsi_mod.scan=none agent.debug_console agent.debug_console_vport=1026 -pidfile /run/vc/vm/51eacfaf94c8195f4f819a5ca7ba7c5ab73c74f8ed9249af46d142791c051bbc/pid -smp 1,cores=1,threads=1,sockets=16,maxcpus=16
+root     2691886 2688819  0 21:43 pts/0    00:00:00 grep --color=auto qemu
+[root@foss-ssc-6 ns]# ip netns identify 2508754
+cni-ffbddab3-69fb-42dc-4534-d72d755f7958
+
 ```
 
 Network Interface Pairs
