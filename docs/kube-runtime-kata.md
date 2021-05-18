@@ -1,7 +1,13 @@
-Kata Container
+Kata Container -- **<span style="color:red;font-size:1em;">The speed of containers,  the security of VMs<span>**
 ---
 
 - [What is Kata-container???](#what-is-kata-container)
+  - [Guest kernel](#guest-kernel)
+  - [Guest image](#guest-image)
+    - [Root filesystem image](#root-filesystem-image)
+    - [Initrd image](#initrd-image)
+  - [Agent](#agent)
+  - [Runtime](#runtime)
 - [CRI & Conainerd & Kata Containerd Runtime](#cri--conainerd--kata-containerd-runtime)
   - [runc & kata-container](#runc--kata-container)
 - [Kata Container Runtime Installation](#kata-container-runtime-installation)
@@ -14,15 +20,55 @@ Kata Container
   - [Containers](#containers)
   - [Host Processes (qemu-kvm)](#host-processes-qemu-kvm)
 - [Kubernetes Integration with Kata Container](#kubernetes-integration-with-kata-container)
-- [Networking???](#networking)
+- [Networking](#networking)
 - [Debugging](#debugging)
-- [process in VM???](#process-in-vm)
+  - [How to enable debugging console](#how-to-enable-debugging-console)
   
-
-<span style="color:red;font-size:4em;">The speed of containers,  the security of VMs<span>
 
 # What is Kata-container???
 Kata Containers is an open source community working to build **a secure container runtime** with lightweight virtual machines that feel and perform like containers, but provide stronger workload isolation using hardware virtualization technology as a second layer of defense
+
+Features
+* **Security**
+  
+  Runs in a dedicated kernel, providing isolation of network, I/O and memory and can utilize hardware-enforced isolation with virtualization VT extensions.
+* **Compatibility**
+  
+  Supports industry standards including OCI container format, Kubernetes CRI interface, as well as legacy virtualization technologies. 
+* **Performance**
+  
+  Delivers consistent performance as standard Linux containers; increased isolation without the performance tax of standard virtual machines. 
+* **Simplicity**
+  
+  Eliminates the requirement for nesting containers inside full blown virtual machines; standard interfaces make it easy to plug in and get started. 
+
+## Guest kernel
+
+The guest kernel is passed to the hypervisor and used to boot the virtual machine. The default kernel provided in Kata Containers is highly optimized for kernel boot time and minimal memory footprint, providing only those services required by a container workload. This is based on a very current upstream Linux kernel.
+
+## Guest image
+
+Kata Containers supports both an initrd and rootfs based minimal guest image.
+
+### Root filesystem image
+The default packaged root filesystem image, sometimes referred to as the "mini O/S", is a highly optimized container bootstrap system based on Clear Linux. It provides an extremely minimal environment and has a highly optimized boot path.
+
+The only services running in the context of the mini O/S are the **init daemon (systemd)** and the **Agent**. The real workload the user wishes to run is created using libcontainer, creating a container in the same manner that is done by runc
+
+### Initrd image
+
+A compressed cpio(1) archive, created from a rootfs which is loaded into memory and used as part of the Linux startup process. During startup, the kernel unpacks it into a special instance of a tmpfs that becomes the initial root filesystem.
+
+The only service running in the context of the initrd is the Agent as the init daemon. The real workload the user wishes to run is created using libcontainer, creating a container in the same manner that is done by runc.
+
+## Agent
+a process running in the guest as a supervisor for managing containers and processes running within those containers
+
+## Runtime
+ a containerd runtime shimv2 implementation and is responsible for handling the runtime v2 shim APIs, which is similar to the OCI runtime specification but simplifies the architecture by loading the runtime once and making RPC calls to handle the various container lifecycle commands. This refinement is an improvement on the OCI specification which requires the container manager call the runtime binary multiple times, at least once for each lifecycle command
+
+Baidu is running Kata Containers in production to support Function Computing, Cloud Container Instances, and Edge Computing
+
 
 # CRI & Conainerd & Kata Containerd Runtime
 ![CRI Container Integration with Kata Container Runtime](../pics/kata.JPG)
@@ -194,20 +240,32 @@ spec:
 "runtimeClassName: mykata", here "mykata" is name if RuntimeClass defined above.
 
 ```
-NAMESPACE         NAME                                     READY   STATUS    RESTARTS   AGE
-default           nginx-deployment-66b6c48dd5-z2lz6        1/1     Running   0          24m
-default           nginx-deployment-kata-547c444767-lx5dh   2/2     Running   0          3m40s
+[root@foss-ssc-6 crio]# kubectl get pod --all-namespaces -o wide
+NAMESPACE         NAME                                 READY   STATUS    RESTARTS   AGE   IP                NODE         NOMINATED NODE   READINESS GATES
+default           alpine-deployment-6dcc6865f6-7sxgj   1/1     Running   0          19m   172.85.0.19       foss-ssc-6   <none>           <none>
+default           alpine-kata-74766d5587-glq47         2/2     Running   0          19m   172.85.0.20       foss-ssc-6   <none>           <none>
+kube-system       coredns-558bd4d5db-4vhms             1/1     Running   0          18h   172.85.0.4        foss-ssc-6   <none>           <none>
+kube-system       coredns-558bd4d5db-k7p8k             1/1     Running   0          18h   172.85.0.3        foss-ssc-6   <none>           <none>
+
 ```
 
 ```
 [root@foss-ssc-6 crio]# crictl pods
-POD ID              CREATED             STATE               NAME                                     NAMESPACE           ATTEMPT             RUNTIME
-7ad443e1a4894       12 minutes ago      Ready               nginx-deployment-kata-547c444767-pzjtm   default             0                   kata
-868196a98aaab       55 minutes ago      Ready               nginx-deployment-66b6c48dd5-z2lz6        default             0                   (default)
+POD ID              CREATED             STATE               NAME                                 NAMESPACE           ATTEMPT             RUNTIME
+9b33e739b574e       21 minutes ago      Ready               alpine-kata-74766d5587-glq47         default             0                   kata
+f45858f9b12a8       21 minutes ago      Ready               alpine-deployment-6dcc6865f6-7sxgj   default             0                   (default)
+87051eced286f       18 hours ago        Ready               coredns-558bd4d5db-4vhms             kube-system         0                   (default)
+8c390519bd1a2       18 hours ago        Ready               coredns-558bd4d5db-k7p8k             kube-system         0                   (default)
+e9f5e5e0ea004       18 hours ago        Ready               tigera-operator-5b47ff5dcc-mgzrf     tigera-operator     0                   (default)
+92e713859d3ef       19 hours ago        Ready               kube-proxy-vqqdw                     kube-system         0                   (default)
+0aff1f13d6ef2       19 hours ago        Ready               kube-apiserver-foss-ssc-6            kube-system         0                   (default)
+59e303f6e98ba       19 hours ago        Ready               kube-controller-manager-foss-ssc-6   kube-system         0                   (default)
+360460b186cd7       19 hours ago        Ready               etcd-foss-ssc-6                      kube-system         0                   (default)
+76a61a7dc080c       19 hours ago        Ready               kube-scheduler-foss-ssc-6            kube-system         0                   (default)
 
 ```
 
-# Networking???
+# Networking
 
 here CNI is "bridge"
 ```
@@ -221,23 +279,237 @@ mybridge                8000.2af402f81b2e       no              veth32fa0e96
 virbr0          8000.525400d4b5fc       yes             virbr0-nic
 [root@foss-ssc-6 crio]# kubectl apply -f kata-deployment.yaml
 deployment.apps/nginx-deployment-kata created
-[root@foss-ssc-6 crio]# brctl show
-bridge name     bridge id               STP enabled     interfaces
-cni0            8000.9615ea61eda7       no
-docker0         8000.02426758e8bd       no
+
 mybridge                8000.2af402f81b2e       no              veth32fa0e96
+                                                        veth453817b2
+                                                        veth49fbaa79
                                                         veth4ae2f351
-                                                        vetha27d5842
-                                                        vethfecd0aa6
-virbr0          8000.525400d4b5fc       yes             virbr0-nic
 [root@foss-ssc-6 crio]#
+```
+
+Host Layer Device Information
+```
+1562: veth453817b2@if3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master mybridge state UP group default
+    link/ether f6:b6:85:cc:5f:ee brd ff:ff:ff:ff:ff:ff link-netns cni-cbd86204-54d7-e0fa-8c32-b47b32af815a
+    inet6 fe80::f4b6:85ff:fecc:5fee/64 scope link
+       valid_lft forever preferred_lft forever
+1563: veth49fbaa79@if3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master mybridge state UP group default
+    link/ether 62:cd:7c:97:36:f4 brd ff:ff:ff:ff:ff:ff link-netns cni-a491f8b4-4490-1d8c-a7b0-70ae17166323
+    inet6 fe80::60cd:7cff:fe97:36f4/64 scope link
+       valid_lft forever preferred_lft forever
+
+
+1546: veth4ae2f351@if3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master mybridge state UP group default
+    link/ether 9e:b8:cf:4f:66:1b brd ff:ff:ff:ff:ff:ff link-netns cni-76462936-ccf7-ae49-dabe-8b6031fdc460
+    inet6 fe80::9cb8:cfff:fe4f:661b/64 scope link
+       valid_lft forever preferred_lft forever
+
+1547: veth32fa0e96@if3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master mybridge state UP group default
+    link/ether 3e:09:d0:18:b3:17 brd ff:ff:ff:ff:ff:ff link-netns cni-f6c8e979-99e8-e6d0-06d4-b6f13578b4a6
+    inet6 fe80::3c09:d0ff:fe18:b317/64 scope link
+       valid_lft forever preferred_lft forever
+```
+
+This container (its network namespace is **cni-cbd86204-54d7-e0fa-8c32-b47b32af815a**) is generic container whose veth(**eth0**) is directly connecting with host node **veth453817b2**
+```
+[root@foss-ssc-6 crio]# kubectl exec -ti alpine-deployment-6dcc6865f6-7sxgj -- ip addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+3: eth0@if1562: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 1500 qdisc noqueue state UP
+    link/ether 2e:c8:05:ec:63:c0 brd ff:ff:ff:ff:ff:ff
+    inet 172.85.0.19/24 brd 172.85.0.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::2cc8:5ff:feec:63c0/64 scope link
+       valid_lft forever preferred_lft forever
+```
+
+This is Kata VM network namespaces (**cni-a491f8b4-4490-1d8c-a7b0-70ae17166323**) whose veth (**eth0**) is directly connecting with host node **veth49fbaa79**
+```
+[root@foss-ssc-6 crio]# ip netns exec cni-a491f8b4-4490-1d8c-a7b0-70ae17166323 ip addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+3: eth0@if1563: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 4a:a2:0d:6a:0b:30 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 172.85.0.20/24 brd 172.85.0.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::48a2:dff:fe6a:b30/64 scope link
+       valid_lft forever preferred_lft forever
+4: tap0_kata: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UNKNOWN group default qlen 1000
+    link/ether 9e:13:0b:98:e4:28 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::9c13:bff:fe98:e428/64 scope link
+       valid_lft forever preferred_lft forever
+[root@foss-ssc-6 crio]#
+```
+
+**mirroring packet from eth0 to tap0_taka**
+```
+[root@foss-ssc-6 crio]# ip netns exec cni-a491f8b4-4490-1d8c-a7b0-70ae17166323 tc qdisc show dev eth0
+qdisc noqueue 0: root refcnt 2
+qdisc ingress ffff: parent ffff:fff1 ----------------
+
+[root@foss-ssc-6 crio]# ip netns exec cni-a491f8b4-4490-1d8c-a7b0-70ae17166323 tc filter show dev eth0 parent ffff:
+filter protocol all pref 49152 u32 chain 0
+filter protocol all pref 49152 u32 chain 0 fh 800: ht divisor 1
+filter protocol all pref 49152 u32 chain 0 fh 800::800 order 2048 key ht 800 bkt 0 terminal flowid ??? not_in_hw
+  match 00000000/00000000 at 0
+        action order 1: mirred (Egress Redirect to device tap0_kata) stolen
+        index 1 ref 1 bind 1
+```
+
+**mirroring packet from tap0_taka to eth0**
+```
+[root@foss-ssc-6 crio]# ip netns exec cni-a491f8b4-4490-1d8c-a7b0-70ae17166323 tc qdisc show dev tap0_kata
+qdisc mq 0: root
+qdisc fq_codel 0: parent :1 limit 10240p flows 1024 quantum 1514 target 5.0ms interval 100.0ms memory_limit 32Mb ecn
+qdisc ingress ffff: parent ffff:fff1 ----------------
+[root@foss-ssc-6 crio]#
+
+[root@foss-ssc-6 crio]# ip netns exec cni-a491f8b4-4490-1d8c-a7b0-70ae17166323 tc filter show dev tap0_kata  parent ffff:
+filter protocol all pref 49152 u32 chain 0
+filter protocol all pref 49152 u32 chain 0 fh 800: ht divisor 1
+filter protocol all pref 49152 u32 chain 0 fh 800::800 order 2048 key ht 800 bkt 0 terminal flowid ??? not_in_hw
+  match 00000000/00000000 at 0
+        action order 1: mirred (Egress Redirect to device eth0) stolen
+        index 2 ref 1 bind 1
+```
+
+```
+[root@foss-ssc-6 crio]# kubectl exec -ti alpine-kata-74766d5587-glq47 -- ip addr
+Defaulted container "alpine-kata-top1" out of: alpine-kata-top1, alpine-kata-top2
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP qlen 1000
+    link/ether 4a:a2:0d:6a:0b:30 brd ff:ff:ff:ff:ff:ff
+    inet 172.85.0.20/24 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::48a2:dff:fe6a:b30/64 scope link
+       valid_lft forever preferred_lft forever
+[root@foss-ssc-6 crio]#
+```
+
+Kata VM Networking
+![Kata VM Networking Connectivity](../pics/kata-networking.JPG)
+
+ Kata Containers will create a tap device for the VM, tap0_kata, and setup a TC redirection filter to mirror traffic from eth0's ingress to tap0_kata's egress, and a second to mirror traffic from tap0_kata's ingress to eth0's egress
+
+```
+[root@foss-ssc-6 crio]# ip netns
+cni-a491f8b4-4490-1d8c-a7b0-70ae17166323 (id: 8) (default runc pod net namespaces)
+cni-cbd86204-54d7-e0fa-8c32-b47b32af815a (id: 3) (kata VM net namespaces)
+cni-f6c8e979-99e8-e6d0-06d4-b6f13578b4a6 (id: 7) (default runc coredns pod net namespaces)
+cni-76462936-ccf7-ae49-dabe-8b6031fdc460 (id: 6) (default runc coredns pod net namespaces)
+```
+
+Network Interface Pairs
+```
+        netPair := NetworkInterfacePair{
+                TapInterface: TapInterface{
+                        ID:   uniqueID,
+                        Name: fmt.Sprintf("br%d_kata", idx),
+                        TAPIface: NetworkInterface{
+                                Name: fmt.Sprintf("tap%d_kata", idx),
+                        },
+                },
+                VirtIface: NetworkInterface{
+                        Name:     fmt.Sprintf("eth%d", idx),
+                        HardAddr: randomMacAddr,
+                },
+                NetInterworkingModel: interworkingModel,
+        }
 ```
 
 # Debugging
 
-```
-kubectl exec -ti nginx-deployment-kata-547c444767-pzjtm -c alpine-kata -- dmesg
-cat /usr/share/kata-containers/defaults/configuration.toml
-```
+## How to enable debugging console
+1. update runtime config: /usr/share/kata-containers/defaults/configuration.toml
+   ```
+   [agent.kata]
+   debug_console_enabled = true
+   ```
 
-# process in VM???
+2. Start kata monitor
+   ```
+   sudo kata-monitor &
+   [1] 2517091
+   [root@foss-ssc-6 crio]# netstat -apn  |grep 8090
+   tcp6       0      0 :::8090                 :::*                    LISTEN      2517093/kata-monito
+   ```
+3. Obtain sandbox id(pod id w/ no-trunc)
+   ```
+   [root@foss-ssc-6 crio]# crictl pods --no-trunc
+    POD ID                                                             CREATED             STATE               NAME                                 NAMESPACE           ATTEMPT             RUNTIME
+    51eacfaf94c8195f4f819a5ca7ba7c5ab73c74f8ed9249af46d142791c051bbc   15 minutes ago      Ready               centos-kata-67b77b5898-9fms2         default             0                   kata
+
+   ```
+4. Log into debugging console
+   ```
+   [root@foss-ssc-6 crio]# kata-runtime exec 51eacfaf94c8195f4f819a5ca7ba7c5ab73c74f8ed9249af46d142791c051bbc
+    bash-4.4# ps -ef
+    UID          PID    PPID  C STIME TTY          TIME CMD
+    0              1       0  0 08:18 ?        00:00:00 /init
+    0              2       0  0 08:18 ?        00:00:00 [kthreadd]
+    0              3       2  0 08:18 ?        00:00:00 [rcu_gp]
+    0              4       2  0 08:18 ?        00:00:00 [rcu_par_gp]
+    0              5       2  0 08:18 ?        00:00:02 [kworker/0:0-virtio_vsock]
+    0              6       2  0 08:18 ?        00:00:00 [kworker/0:0H]
+    0              7       2  0 08:18 ?        00:00:00 [kworker/u32:0-events_unboun
+    0              8       2  0 08:18 ?        00:00:00 [mm_percpu_wq]
+    0              9       2  0 08:18 ?        00:00:00 [ksoftirqd/0]
+    0             10       2  0 08:18 ?        00:00:00 [rcu_sched]
+    0             11       2  0 08:18 ?        00:00:00 [migration/0]
+    0             12       2  0 08:18 ?        00:00:00 [watchdog/0]
+    0             13       2  0 08:18 ?        00:00:00 [cpuhp/0]
+    0             15       2  0 08:18 ?        00:00:00 [kdevtmpfs]
+    0             16       2  0 08:18 ?        00:00:00 [netns]
+    0             17       2  0 08:18 ?        00:00:00 [kauditd]
+    0             18       2  0 08:18 ?        00:00:00 [khungtaskd]
+    0             19       2  0 08:18 ?        00:00:00 [oom_reaper]
+    0             20       2  0 08:18 ?        00:00:00 [writeback]
+    0             21       2  0 08:18 ?        00:00:00 [kcompactd0]
+    0             22       2  0 08:18 ?        00:00:00 [ksmd]
+    0             23       2  0 08:18 ?        00:00:00 [khugepaged]
+    0             24       2  0 08:18 ?        00:00:00 [crypto]
+    0             25       2  0 08:18 ?        00:00:00 [kintegrityd]
+    0             26       2  0 08:18 ?        00:00:00 [kblockd]
+    0             27       2  0 08:18 ?        00:00:00 [blkcg_punt_bio]
+    0             28       2  0 08:18 ?        00:00:00 [tpm_dev_wq]
+    0             29       2  0 08:18 ?        00:00:00 [md]
+    0             30       2  0 08:18 ?        00:00:00 [edac-poller]
+    0             31       2  0 08:18 ?        00:00:00 [watchdogd]
+    0             33       2  0 08:18 ?        00:00:00 [pm_wq]
+    0             35       2  0 08:18 ?        00:00:00 [kworker/u32:1]
+    0             49       2  0 08:18 ?        00:00:00 [kswapd0]
+    0            132       2  0 08:18 ?        00:00:00 [kthrotld]
+    0            133       2  0 08:18 ?        00:00:00 [acpi_thermal_pm]
+    0            134       2  0 08:18 ?        00:00:00 [hwrng]
+    0            135       2  0 08:18 ?        00:00:00 [kmpath_rdacd]
+    0            136       2  0 08:18 ?        00:00:00 [kaluad]
+    0            137       2  0 08:18 ?        00:00:00 [ipv6_addrconf]
+    0            138       2  0 08:18 ?        00:00:00 [kstrp]
+    0            194       1  0 08:18 ?        00:00:03 /usr/lib/systemd/systemd-jou
+    0            199       2  0 08:18 ?        00:00:00 [kworker/0:3-virtio_vsock]
+    0            203       1  0 08:18 ?        00:00:03 /usr/lib/systemd/systemd-ude
+    0            207       2  0 08:18 ?        00:00:00 [khvcd]
+    0            208       2  0 08:18 ?        00:00:00 [scsi_eh_0]
+    0            209       2  0 08:18 ?        00:00:00 [scsi_tmf_0]
+    0            214       1  0 08:18 ?        00:00:01 /usr/bin/kata-agent
+    0            242     214  0 08:18 ?        00:00:00 /pause
+    0            248     214  0 08:18 ?        00:00:00 /usr/bin/coreutils --coreuti
+    0            255     214  0 08:18 ?        00:00:00 /usr/bin/coreutils --coreuti
+    0            258     214  0 08:34 pts/0    00:00:00 [bash]
+    0            260     258  0 08:34 pts/0    00:00:00 ps -ef
+    bash-4.4#
+
+   ```
