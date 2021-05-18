@@ -6,20 +6,20 @@ Kata Container
   - [runc & kata-container](#runc--kata-container)
 - [Kata Container Runtime Installation](#kata-container-runtime-installation)
   - [kubeadm init](#kubeadm-init)
-- [Start Kata Container](#start-kata-container)
-  - [Kata-container configuration](#kata-container-configuration)
-  - [Containers](#containers)
-  - [Processes (qemu-kvm)](#processes-qemu-kvm)
 - [Containerd as Runtime Configuration](#containerd-as-runtime-configuration)
   - [proxy](#proxy)
   - [Runtime Plugin](#runtime-plugin)
+- [Start Kata Container](#start-kata-container)
+  - [Kata-container configuration](#kata-container-configuration)
+  - [Containers](#containers)
+  - [Host Processes (qemu-kvm)](#host-processes-qemu-kvm)
 - [Kubernetes Integration with Kata Container](#kubernetes-integration-with-kata-container)
 - [Networking???](#networking)
 - [Debugging](#debugging)
 - [process in VM???](#process-in-vm)
   
 
-**The speed of containers,  the security of VMs**
+<span style="color:red;font-size:4em;">The speed of containers,  the security of VMs<span>
 
 # What is Kata-container???
 Kata Containers is an open source community working to build **a secure container runtime** with lightweight virtual machines that feel and perform like containers, but provide stronger workload isolation using hardware virtualization technology as a second layer of defense
@@ -57,40 +57,6 @@ kubeadm init --pod-network-cidr=192.168.0.0/16  --cri-socket=unix:///run/contain
 [root@foss-ssc-6 crio]# cat /var/lib/kubelet/kubeadm-flags.env
 KUBELET_KUBEADM_ARGS="--container-runtime=remote --container-runtime-endpoint=unix:///run/containerd/containerd.sock --pod-infra-container-image=k8s.gcr.io/pause:3.4.1"
 [root@foss-ssc-6 crio]#
-```
-
-# Start Kata Container
-```
-[root@foss-ssc-6 ~]# ctr run --runtime io.containerd.run.kata.v2 -t --rm docker.io/library/busybox:latest hello sh
-/ # ps -ef
-PID   USER     TIME  COMMAND
-    1 root      0:00 sh
-    2 root      0:00 ps -ef
-/ #
-```
-
-## Kata-container configuration
-```
-cat /usr/share/kata-containers/defaults/configuration.toml
-```
-## Containers
-```
-[root@foss-ssc-6 libexec]# ctr c ls
-CONTAINER    IMAGE                               RUNTIME
-hello        docker.io/library/busybox:latest    io.containerd.run.kata.v2
-[root@foss-ssc-6 libexec]#
-```
-
-## Processes (qemu-kvm)
-```
-[root@foss-ssc-6 yum.repos.d]# ps -ef | grep kata
-root     1537920 1007772  0 13:32 pts/2    00:00:00 ctr run --runtime io.containerd.run.kata.v2 -t --rm docker.io/library/busybox:latest hello sh
-
-1537941 ?        Sl     0:04 /usr/bin/containerd-shim-kata-v2 -namespace default -address /run/containerd/containerd.sock -publish-binary /usr/bin/containerd -id hello
-1537951 ?        Sl     0:00  \_ /usr/libexec/virtiofsd --fd=3 -o source=/run/kata-containers/shared/sandboxes/hello/shared -o cache=auto --syslog -o no_posix_lock -f --thread-pool-size=1
-1537961 ?        Sl     0:00      \_ /usr/libexec/virtiofsd --fd=3 -o source=/run/kata-containers/shared/sandboxes/hello/shared -o cache=auto --syslog -o no_posix_lock -f --thread-pool-size=1
-
-root     1537958       1 53 13:32 ?        00:00:10 /usr/libexec/qemu-kvm -name sandbox-hello -uuid 461e04f9-3544-483a-9e0c-57d1d3fb152e -machine q35,accel=kvm,kernel_irqchip -cpu host,pmu=off -qmp unix:/run/vc/vm/hello/qmp.sock,server,nowait -m 2048M,slots=10,maxmem=32938M -device pci-bridge,bus=pcie.0,id=pci-bridge-0,chassis_nr=1,shpc=on,addr=2,romfile= -device virtio-serial-pci,disable-modern=false,id=serial0,romfile= -device virtconsole,chardev=charconsole0,id=console0 -chardev socket,id=charconsole0,path=/run/vc/vm/hello/console.sock,server,nowait -device virtio-scsi-pci,id=scsi0,disable-modern=false,romfile= -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0,romfile= -device vhost-vsock-pci,disable-modern=false,vhostfd=3,id=vsock-1616513657,guest-cid=1616513657,romfile= -chardev socket,id=char-10984ae27fc7ed40,path=/run/vc/vm/hello/vhost-fs.sock -device vhost-user-fs-pci,chardev=char-10984ae27fc7ed40,tag=kataShared,romfile= -rtc base=utc,driftfix=slew,clock=host -global kvm-pit.lost_tick_policy=discard -vga none -no-user-config -nodefaults -nographic --no-reboot -daemonize -object memory-backend-file,id=dimm1,size=2048M,mem-path=/dev/shm,share=on -numa node,memdev=dimm1 -kernel /usr/lib/modules/4.18.0-240.22.1.el8_3.x86_64/vmlinuz -initrd /var/cache/kata-containers/osbuilder-images/4.18.0-240.22.1.el8_3.x86_64/"centos"-kata-4.18.0-240.22.1.el8_3.x86_64.initrd -append tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k console=hvc0 console=hvc1 cryptomgr.notests net.ifnames=0 pci=lastbus=0 quiet panic=1 nr_cpus=16 scsi_mod.scan=none -pidfile /run/vc/vm/hello/pid -smp 1,cores=1,threads=1,sockets=16,maxcpus=16
 ```
 
 # Containerd as Runtime Configuration
@@ -153,6 +119,41 @@ ExecStart=/usr/bin/containerd
   runtime_type = "io.containerd.kata.v2"
   # runtime_engine is the name of the runtime engine used by containerd.
 ```
+
+# Start Kata Container
+```
+[root@foss-ssc-6 ~]# ctr run --runtime io.containerd.run.kata.v2 -t --rm docker.io/library/busybox:latest hello sh
+/ # ps -ef
+PID   USER     TIME  COMMAND
+    1 root      0:00 sh
+    2 root      0:00 ps -ef
+/ #
+```
+
+## Kata-container configuration
+```
+cat /usr/share/kata-containers/defaults/configuration.toml
+```
+## Containers
+```
+[root@foss-ssc-6 libexec]# ctr c ls
+CONTAINER    IMAGE                               RUNTIME
+hello        docker.io/library/busybox:latest    io.containerd.run.kata.v2
+[root@foss-ssc-6 libexec]#
+```
+
+## Host Processes (qemu-kvm)
+```
+[root@foss-ssc-6 yum.repos.d]# ps -ef | grep kata
+root     1537920 1007772  0 13:32 pts/2    00:00:00 ctr run --runtime io.containerd.run.kata.v2 -t --rm docker.io/library/busybox:latest hello sh
+
+1537941 ?        Sl     0:04 /usr/bin/containerd-shim-kata-v2 -namespace default -address /run/containerd/containerd.sock -publish-binary /usr/bin/containerd -id hello
+1537951 ?        Sl     0:00  \_ /usr/libexec/virtiofsd --fd=3 -o source=/run/kata-containers/shared/sandboxes/hello/shared -o cache=auto --syslog -o no_posix_lock -f --thread-pool-size=1
+1537961 ?        Sl     0:00      \_ /usr/libexec/virtiofsd --fd=3 -o source=/run/kata-containers/shared/sandboxes/hello/shared -o cache=auto --syslog -o no_posix_lock -f --thread-pool-size=1
+
+root     1537958       1 53 13:32 ?        00:00:10 /usr/libexec/qemu-kvm -name sandbox-hello -uuid 461e04f9-3544-483a-9e0c-57d1d3fb152e -machine q35,accel=kvm,kernel_irqchip -cpu host,pmu=off -qmp unix:/run/vc/vm/hello/qmp.sock,server,nowait -m 2048M,slots=10,maxmem=32938M -device pci-bridge,bus=pcie.0,id=pci-bridge-0,chassis_nr=1,shpc=on,addr=2,romfile= -device virtio-serial-pci,disable-modern=false,id=serial0,romfile= -device virtconsole,chardev=charconsole0,id=console0 -chardev socket,id=charconsole0,path=/run/vc/vm/hello/console.sock,server,nowait -device virtio-scsi-pci,id=scsi0,disable-modern=false,romfile= -object rng-random,id=rng0,filename=/dev/urandom -device virtio-rng-pci,rng=rng0,romfile= -device vhost-vsock-pci,disable-modern=false,vhostfd=3,id=vsock-1616513657,guest-cid=1616513657,romfile= -chardev socket,id=char-10984ae27fc7ed40,path=/run/vc/vm/hello/vhost-fs.sock -device vhost-user-fs-pci,chardev=char-10984ae27fc7ed40,tag=kataShared,romfile= -rtc base=utc,driftfix=slew,clock=host -global kvm-pit.lost_tick_policy=discard -vga none -no-user-config -nodefaults -nographic --no-reboot -daemonize -object memory-backend-file,id=dimm1,size=2048M,mem-path=/dev/shm,share=on -numa node,memdev=dimm1 -kernel /usr/lib/modules/4.18.0-240.22.1.el8_3.x86_64/vmlinuz -initrd /var/cache/kata-containers/osbuilder-images/4.18.0-240.22.1.el8_3.x86_64/"centos"-kata-4.18.0-240.22.1.el8_3.x86_64.initrd -append tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k console=hvc0 console=hvc1 cryptomgr.notests net.ifnames=0 pci=lastbus=0 quiet panic=1 nr_cpus=16 scsi_mod.scan=none -pidfile /run/vc/vm/hello/pid -smp 1,cores=1,threads=1,sockets=16,maxcpus=16
+```
+
 
 # Kubernetes Integration with Kata Container
 ```
