@@ -23,6 +23,7 @@ Kata Container -- **<span style="color:red;font-size:1em;">The speed of containe
 - [Networking](#networking)
 - [Debugging](#debugging)
   - [How to enable debugging console](#how-to-enable-debugging-console)
+- [Q&A](#qa)
   
 
 # What is Kata-container???
@@ -525,5 +526,171 @@ Network Interface Pairs
     0            258     214  0 08:34 pts/0    00:00:00 [bash]
     0            260     258  0 08:34 pts/0    00:00:00 ps -ef
     bash-4.4#
+   ```
+
+   # Q&A
+   1. Q: error "Warning  Failed     10m (x2 over 10m)  kubelet            Error: failed to create containerd task: failed to online 3 CPU(s) after 100 retries: unknown" fired.
+
+   A: It takes 18s normally to bring up VM w/ 5 CPUs. but here Kata-Containers "online_cpus" only wait 100 * 50 = 5seconds. so it failed first time and then when retry to bring up again, it successed.
+
+   ```
+    // max wait for all CPUs to online will use 50 * 100 = 5 seconds.
+    const ONLINE_CPUMEM_WATI_MILLIS: u64 = 50;
+    const ONLINE_CPUMEM_MAX_RETRIES: u32 = 100;
+
+    fn online_cpus(logger: &Logger, num: i32) -> Result<i32> {
+        let mut onlined_count: i32 = 0;
+
+        for i in 0..ONLINE_CPUMEM_MAX_RETRIES {
+            let r = online_resources(
+                logger,
+                SYSFS_CPU_ONLINE_PATH,
+                r"cpu[0-9]+",
+                num - onlined_count,
+            );
+            if r.is_err() {
+                return r;
+            }
+
+            onlined_count += r.unwrap();
+            if onlined_count == num {
+                info!(logger, "online {} CPU(s) after {} retries", num, i);
+                return Ok(num);
+            }
+            thread::sleep(time::Duration::from_millis(ONLINE_CPUMEM_WATI_MILLIS));
+        }
+
+        Err(anyhow!(
+            "failed to online {} CPU(s) after {} retries",
+            num,
+            ONLINE_CPUMEM_MAX_RETRIES
+        ))
+    }
+   ```
+
+   ```
+    [    0.661316] zswap: loaded using pool lzo/zbud
+    [    0.661363] page_owner is disabled
+    [    0.670378] Key type big_key registered
+    [    0.674890] Key type encrypted registered
+    [    0.674898] ima: No TPM chip found, activating TPM-bypass!
+    [    0.674904] ima: Allocated hash algorithm: sha1
+    [    0.674912] ima: No architecture policies found
+    [    0.674927] evm: Initialising EVM extended attributes:
+    [    0.674927] evm: security.selinux
+    [    0.674928] evm: security.ima
+    [    0.674928] evm: security.capability
+    [    0.674929] evm: HMAC attrs: 0x1
+    [    0.675386] rtc_cmos 00:02: setting system clock to 2021-05-19 01:23:34 UTC (1621387414)
+    [    0.675428] Warning: unable to open an initial console.
+    [    0.677748] Freeing unused decrypted memory: 2040K
+    [    0.678727] Freeing unused kernel memory: 2432K
+    [    0.679055] Write protecting the kernel read-only data: 18432k
+    [    0.680418] Freeing unused kernel memory: 2016K
+    [    0.680508] Freeing unused kernel memory: 136K
+    [    0.691335] systemd[1]: systemd 239 (239-41.el8_3.2) running in system mode. (+PAM +AUDIT +SELINUX +IMA -APPARMOR +SMACK +SYSVINIT +UTMP +LIBCRYPTSETUP +GCRYPT +GNUTLS +ACL +XZ +LZ4 +SECCOMP +BLKID +ELFUTILS +KMOD +IDN2 -IDN +PCRE2 default-hierarchy=legacy)
+    [    0.691400] systemd[1]: Detected virtualization kvm.
+    [    0.691405] systemd[1]: Detected architecture x86-64.
+    [    0.693434] systemd[1]: No hostname configured.
+    [    0.693442] systemd[1]: Set hostname to <localhost>.
+    [    0.693496] systemd[1]: Initializing machine ID from KVM UUID.
+    [    0.727371] systemd[1]: Reached target Slices.
+    [    0.727590] systemd[1]: Listening on Journal Socket.
+    [    0.729328] systemd[1]: Starting Create list of required static device nodes for the current kernel...
+    [    0.730345] systemd[1]: Starting Load Kernel Modules...
+    [    0.861309] fuse: init (API version 7.31)
+    [    0.978277] printk: console [hvc0] enabled
+    [    1.046341] scsi host0: Virtio SCSI HBA
+    [    1.081070] NET: Registered protocol family 40
+    [   10.491397] systemd[1]: Started udev Kernel Device Manager.
+    [   10.625315] systemd[1]: Started Journal Service.
+    [   11.580506] CPU1 has been hot-added
+    [   11.631853] x86: Booting SMP configuration:
+    [   11.631857] smpboot: Booting Node 0 Processor 1 APIC 0xf
+    [   11.632310] kvm-clock: cpu 1, msr 43801041, secondary cpu clock
+
+    [   11.632773] smpboot: CPU 1 Converting physical 15 to logical package 1
+    [   11.632776] smpboot: CPU 1 Converting physical 0 to logical die 1
+    [   11.634353] KVM setup async PF for cpu 1
+    [   11.634368] kvm-stealtime: cpu 1, msr 7c86c080
+    [   11.692497] Will online and init hotplugged CPU: 1
+    [   11.700624] CPU2 has been hot-added
+    [   11.703322] CPU3 has been hot-added
+    [   11.712516] smpboot: Booting Node 0 Processor 2 APIC 0xe
+    [   11.712894] kvm-clock: cpu 2, msr 43801081, secondary cpu clock
+    [   11.713348] smpboot: CPU 2 Converting physical 14 to logical package 2
+    [   11.713351] smpboot: CPU 2 Converting physical 0 to logical die 2
+    [   11.713562] KVM setup async PF for cpu 2
+    [   11.713576] kvm-stealtime: cpu 2, msr 7c8ac080
+    [   11.752035] Will online and init hotplugged CPU: 2
+    [   11.757494] smpboot: Booting Node 0 Processor 3 APIC 0xd
+    [   11.757681] kvm-clock: cpu 3, msr 438010c1, secondary cpu clock
+    [   11.757910] smpboot: CPU 3 Converting physical 13 to logical package 3
+    [   11.757911] smpboot: CPU 3 Converting physical 0 to logical die 3
+    [   11.757998] KVM setup async PF for cpu 3
+    [   11.758019] kvm-stealtime: cpu 3, msr 7c8ec080
+    [   11.758996] Will online and init hotplugged CPU: 3
+    [   17.482983] Unregister pv shared memory for cpu 3
+    [   17.485795] smpboot: CPU 3 is now offline
+    [   18.700519] CPU3 has been hot-added
+    [   18.749960] smpboot: Booting Node 0 Processor 3 APIC 0xd
+    [   18.750389] kvm-clock: cpu 3, msr 438010c1, secondary cpu clock
+    [   18.751162] KVM setup async PF for cpu 3
+    [   18.751177] kvm-stealtime: cpu 3, msr 7c8ec080
+    [   18.751744] Will online and init hotplugged CPU: 3
+    [   18.810757] CPU4 has been hot-added
+    [   18.814182] smpboot: Booting Node 0 Processor 4 APIC 0xc
+    [   18.815778] kvm-clock: cpu 4, msr 43801101, secondary cpu clock
+    [   18.816609] smpboot: CPU 4 Converting physical 12 to logical package 4
+    [   18.816613] smpboot: CPU 4 Converting physical 0 to logical die 4
+    [   18.816786] KVM setup async PF for cpu 4
+    [   18.816800] kvm-stealtime: cpu 4, msr 7c92c080
+    [   18.817559] Will online and init hotplugged CPU: 4
+    [   18.819216] CPU5 has been hot-added
+    [   18.871617] smpboot: Booting Node 0 Processor 5 APIC 0xb
+    [   18.871944] kvm-clock: cpu 5, msr 43801141, secondary cpu clock
+    [   18.872398] smpboot: CPU 5 Converting physical 11 to logical package 5
+    [   18.872400] smpboot: CPU 5 Converting physical 0 to logical die 5
+    [   18.872541] KVM setup async PF for cpu 5
+    [   18.872555] kvm-stealtime: cpu 5, msr 7c96c080
+    [   18.873149] Will online and init hotplugged CPU: 5
+   ```
+
+   if only one CPU attached, "1second" is ok for VM up.
+   ```
+    [    0.663242] zswap: loaded using pool lzo/zbud
+    [    0.663290] page_owner is disabled
+    [    0.672417] Key type big_key registered
+    [    0.676910] Key type encrypted registered
+    [    0.676919] ima: No TPM chip found, activating TPM-bypass!
+    [    0.676925] ima: Allocated hash algorithm: sha1
+    [    0.676933] ima: No architecture policies found
+    [    0.676946] evm: Initialising EVM extended attributes:
+    [    0.676947] evm: security.selinux
+    [    0.676947] evm: security.ima
+    [    0.676948] evm: security.capability
+    [    0.676949] evm: HMAC attrs: 0x1
+    [    0.677403] rtc_cmos 00:02: setting system clock to 2021-05-19 02:10:04 UTC (1621390204)
+    [    0.677445] Warning: unable to open an initial console.
+    [    0.680057] Freeing unused decrypted memory: 2040K
+    [    0.680809] Freeing unused kernel memory: 2432K
+    [    0.681067] Write protecting the kernel read-only data: 18432k
+    [    0.682408] Freeing unused kernel memory: 2016K
+    [    0.682501] Freeing unused kernel memory: 136K
+    [    0.692876] systemd[1]: systemd 239 (239-41.el8_3.2) running in system mode. (+PAM +AUDIT +SELINUX +IMA -APPARMOR +SMACK +SYSVINIT +UTMP +LIBCRYPTSETUP +GCRYPT +GNUTLS +ACL +XZ +LZ4 +SECCOMP +BLKID +ELFUTILS +KMOD +IDN2 -IDN +PCRE2 default-hierarchy=legacy)
+    [    0.692944] systemd[1]: Detected virtualization kvm.
+    [    0.692950] systemd[1]: Detected architecture x86-64.
+    [    0.694966] systemd[1]: No hostname configured.
+    [    0.694974] systemd[1]: Set hostname to <localhost>.
+    [    0.695060] systemd[1]: Initializing machine ID from KVM UUID.
+    [    0.728368] systemd[1]: Listening on udev Kernel Socket.
+    [    0.728551] systemd[1]: Listening on udev Control Socket.
+    [    0.728585] systemd[1]: Reached target Slices.
+    [    0.728597] systemd[1]: Reached target Swap.
+    [    0.839141] fuse: init (API version 7.31)
+    [    0.964281] printk: console [hvc0] enabled
+    [    1.027289] scsi host0: Virtio SCSI HBA
+    [    1.061102] NET: Registered protocol family 40
+    [   10.558169] systemd[1]: Started Journal Service.
 
    ```
