@@ -328,7 +328,7 @@ This container (its network namespace is **cni-cbd86204-54d7-e0fa-8c32-b47b32af8
        valid_lft forever preferred_lft forever
 ```
 
-This is Kata VM network namespaces (**cni-a491f8b4-4490-1d8c-a7b0-70ae17166323**) whose veth (**eth0**) is directly connecting with host node **veth49fbaa79**
+This is Kata network namespaces (**cni-a491f8b4-4490-1d8c-a7b0-70ae17166323**) whose veth (**eth0**) is directly connecting with host node **veth49fbaa79**
 ```
 [root@foss-ssc-6 crio]# ip netns exec cni-a491f8b4-4490-1d8c-a7b0-70ae17166323 ip addr
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
