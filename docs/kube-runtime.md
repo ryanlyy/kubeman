@@ -85,6 +85,9 @@ docker still can be used to do:
 2. image tag 
 3. image push (keep registry same between docker and crio/podman/containerd)
 
+continue studying buildah/podman on above tasks.
+buildah/podman can work well with crio to do above.
+
 ### crio rootfs
 ```
 cat /var//lib/containers/storage/overlay-containers/$(crictl --runtime-endpoint unix:///var/run/crio/crio.sock ps --no-trunc | grep 79ca67f9404e5 | awk '{ print $1 }')/userdata/state.json | jq -r '.annotations' | grep io.kubernetes.cri-o.MountPoint | awk -F ":" '{ print $2 }' | tr -s "," " "
