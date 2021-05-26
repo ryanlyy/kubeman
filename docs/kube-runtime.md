@@ -167,12 +167,12 @@ here 79ca67f9404e5 is container id
 |----------- |----------- |----------- |----------- |----------- |
 | Container|attach |attach |attach | attach |
 |N/A|N/A|N/A|N/A|auto-update |
-| Image|build |N/A |N/A | build |
+| Image|build |N/A |buildah bud | build |
 | Container|commit |N/A |N/A | commit |
 | system |N/A|completion|completion| E |
 | Container|cp |N/A |N/A | cp |
 | N/A|N/A|config|config| E |
-| Container|create |create |D | create |
+| Container|create |create |create | create |
 | Container|diff |N/A |N/A | diff |
 | system|events |N/A |N/A | events |
 | Container|exec |exec |exec | exec |
@@ -188,8 +188,8 @@ here 79ca67f9404e5 is container id
 | Container|inspect |inspect/inspectp |inspect/inspectp | inspect |
 | Container|kill |N/A |N/A | kill |
 | Image|load |N/A |N/A | load |
-| Image|login |N/A |N/A | login |
-| Image|logout |N/A |N/A | logout |
+| Image|login |N/A |buildah -u xxx login docker.io | login |
+| Image|logout |N/A |buildah logout docker.io | logout |
 | Container|logs |logs |logs | logs |
 |N/A|N/A|N/A|N/A|manifest |
 |N/A|N/A|N/A|N/A|mount |
@@ -199,7 +199,7 @@ here 79ca67f9404e5 is container id
 | Container|port |port-forward |port-forward | port |
 | Container|ps |ps/pods |ps/pods | ps |
 | Image|pull |pull |pull | pull |
-| Image|push |N/A |N/A | push |
+| Image|push |N/A |buildah push | push |
 | Container|rename |N/A |N/A | rename |
 | Container|restart |N/A |N/A | restart |
 | Container|rm |rm/rmp |rm/rmp | rm |
@@ -212,7 +212,7 @@ here 79ca67f9404e5 is container id
 | Container|stats |stats |stats | stats |
 | Container|stop |stop/stopp |stop/stopp | stop |
 |N/A|N/A|N/A|N/A|system |
-| Image|tag |N/A |N/A | tag |
+| Image|tag |N/A |buildah tag | tag |
 | Container|top |N/A |N/A | top |
 |N/A|N/A|N/A|N/A|unmount |
 | Container|unpause |N/A |N/A | unpause |
