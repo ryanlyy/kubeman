@@ -167,10 +167,10 @@ here 79ca67f9404e5 is container id
 |----------- |----------- |----------- |----------- |----------- |
 | Container|attach |attach |attach | attach |
 |N/A|N/A|N/A|N/A|auto-update |
-| Image|build |N/A |buildah bud | build |
-| Container|commit |N/A |N/A | commit |
+| Image|build |N/A |buildah bud -t xx:yy -f Dockerfile . (same with docker build) | build |
+| Container|commit |N/A |buildah commit cidxxxxx newimage:abc | commit |
 | system |N/A|completion|completion| E |
-| Container|cp |N/A |N/A | cp |
+| Container|cp |N/A | buildah copy cidxxxx './sandbox-config.json' '/root/sandbox-config.json' | cp |
 | N/A|N/A|config|config| E |
 | Container|create |create |create | create |
 | Container|diff |N/A |N/A | diff |
@@ -227,7 +227,7 @@ https://github.com/containers
 
 Tools include:
   * podman - For managing pods and container images (run, stop, start, ps, attach, exec, etc.) outside of the container engine
-  * buildah - a tool that facilitates building Open Container Initiative (OCI) container images
+  * buildah - a tool that facilitates building Open Container Initiative (OCI) container images (openshift supported)
   * skopeo - Manage container image registries
 
 ##  Debugging
