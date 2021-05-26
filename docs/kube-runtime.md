@@ -3,9 +3,16 @@ This artical is used to summary all changes when docker is replaced by container
 - [Deployment](#deployment)
 - [Configuraiton](#configuraiton)
   - [Runtime Class](#runtime-class)
+  - [kubelet container runtime](#kubelet-container-runtime)
 - [Operation and Debugging](#operation-and-debugging)
+  - [Unix Socket](#unix-socket)
+  - [Images and Container Instance](#images-and-container-instance)
+    - [crio rootfs](#crio-rootfs)
+  - [CNI](#cni)
+    - [Container CNI Example](#container-cni-example)
+    - [CRIO CNI Example](#crio-cni-example)
   - [Command Comparision](#command-comparision)
-  - [CRIO Tools](#crio-tools)
+  - [Container Tool Project](#container-tool-project)
   - [Debugging](#debugging)
   - [No Node Access Environment](#no-node-access-environment)
 - [Application](#application)
@@ -15,7 +22,8 @@ This artical is used to summary all changes when docker is replaced by container
 
 | Deployment | Docker | containerd | CRIO | poman |
 |----------|----------|----------|----------|----------| 
-|A | B | C | D | E |
+|rpm | docker-ce-20.10.6-3.el8.x86_64 | containerd.io-1.4.4-3.1.el8.x86_64 | cri-o-1.21.0-4.1.el8.x86_64 | TBA |
+
 
 
 # Configuraiton
@@ -31,76 +39,193 @@ You can set a different RuntimeClass between different Pods to provide **a balan
 
 You can also use RuntimeClass to run different Pods with the same container runtime but with different settings.
 
+## kubelet container runtime
+Q: how to change kubelet remote runtime: docker, containerd, crio and podman???
+
+A: update --container-runtime-endpoint with different unix socket defined in [Unix Socket](#unix-socket) to support different rumtime 
+
+```
+[root@foss-ssc-6 lib]# cd /usr/lib/systemd/system/kubelet.service.d
+[root@foss-ssc-6 kubelet.service.d]# ls
+10-kubeadm.conf
+[root@foss-ssc-6 kubelet.service.d]# cat 10-kubeadm.conf
+# Note: This dropin only works with kubeadm and kubelet v1.11+
+[Service]
+Environment="KUBELET_KUBECONFIG_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf"
+Environment="KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml"
+# This is a file that "kubeadm init" and "kubeadm join" generates at runtime, populating the KUBELET_KUBEADM_ARGS variable dynamically
+EnvironmentFile=-/var/lib/kubelet/kubeadm-flags.env
+# This is a file that the user can use for overrides of the kubelet args as a last resort. Preferably, the user should use
+# the .NodeRegistration.KubeletExtraArgs object in the configuration files instead. KUBELET_EXTRA_ARGS should be sourced from this file.
+EnvironmentFile=-/etc/sysconfig/kubelet
+ExecStart=
+ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_CONFIG_ARGS $KUBELET_KUBEADM_ARGS $KUBELET_EXTRA_ARGS
+[root@foss-ssc-6 kubelet.service.d]# cat /var/lib/kubelet/kubeadm-flags.env
+KUBELET_KUBEADM_ARGS="--container-runtime=remote --container-runtime-endpoint=unix:///run/containerd/containerd.sock --pod-infra-container-image=k8s.gcr.io/pause:3.4.1"
+[root@foss-ssc-6 kubelet.service.d]#
+```
 
 
 # Operation and Debugging
+## Unix Socket
+
+|     | Docker | Containerd | crio | podman |
+| --- | ------ | ---------- | ---- | ------ |
+| Unix Socket | /var/run/docker.sock | /run/containerd/containerd.sock | /var/run/crio/crio.sock | N/A |
+| crictl cmd | N/A |  crictl --runtime-endpoint unix:///var/run/containerd/containerd.sock ps | crictl --runtime-endpoint unix:///var/run/d$crio/crio.sock ps | N/A |
+
+## Images and Container Instance
+|     | Docker | Containerd | crio | podman |
+| --- | ------ | ---------- | ---- | ------ |
+| Images | /var/lib/docker/image/overlay2/imagedb/content/sha256/  | /var/lib/containerd/io.containerd.content.v1.content/blobs/sha256  | /var/lib/containers/storage/overlay-images | TBA |
+| Instance | ryanlyy/kdb/bin/get_container_rootfs.sh | /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots | [crio rootfs](#crio-rootfs) | TBA |
+
+docker still can be used to do:
+1. image build
+2. image tag 
+3. image push (keep registry same between docker and crio/podman/containerd)
+
+### crio rootfs
+```
+cat /var//lib/containers/storage/overlay-containers/$(crictl --runtime-endpoint unix:///var/run/crio/crio.sock ps --no-trunc | grep 79ca67f9404e5 | awk '{ print $1 }')/userdata/state.json | jq -r '.annotations' | grep io.kubernetes.cri-o.MountPoint | awk -F ":" '{ print $2 }' | tr -s "," " "
+```
+here 79ca67f9404e5 is container id
+
+## CNI
+|     | Docker | Containerd | crio | podman |
+| --- | ------ | ---------- | ---- | ------ |
+| config | /etc/cni/net.d | /etc/cni/net.d | /etc/cni/net.d | TBA |
+| bin | /opt/cni/bin |/opt/cni/bin | /opt/cni/bin | TBA |
+| cni | TBA | [Container CNI Example](#container-cni-example) | [CRIO CNI Example](#crio-cni-example) | TBA |
+
+### Container CNI Example
+```
+{
+  "cniVersion": "0.4.0",
+  "name": "containerd-net",
+  "plugins": [
+    {
+      "type": "bridge",
+      "bridge": "cni0",
+      "isGateway": true,
+      "ipMasq": true,
+      "promiscMode": true,
+      "ipam": {
+        "type": "host-local",
+        "ranges": [
+          [{
+            "subnet": "10.88.0.0/16"
+          }],
+          [{
+            "subnet": "2001:4860:4860::/64"
+          }]
+        ],
+        "routes": [
+          { "dst": "0.0.0.0/0" },
+          { "dst": "::/0" }
+        ]
+      }
+    },
+    {
+      "type": "portmap",
+      "capabilities": {"portMappings": true}
+    }
+  ]
+}
+```
+
+### CRIO CNI Example
+```
+{
+    "cniVersion": "0.3.1",
+    "name": "crio",
+    "type": "bridge",
+    "bridge": "cni0",
+    "isGateway": true,
+    "ipMasq": true,
+    "hairpinMode": true,
+    "ipam": {
+        "type": "host-local",
+        "routes": [
+            { "dst": "0.0.0.0/0" },
+            { "dst": "1100:200::1/24" }
+        ],
+        "ranges": [
+            [{ "subnet": "10.85.0.0/16" }],
+            [{ "subnet": "1100:200::/24" }]
+        ]
+    }
+}
+```
+
 ## Command Comparision
 
-| Catelog | Docker Command(docker) | Containerd Command(crictl) | CRIO Command | podman |
+| Catelog | Docker (docker) | Containerd(crictl) | CRIO(crictl)  | podman |
 |----------- |----------- |----------- |----------- |----------- |
-| Container|attach |attach |D | attach |
+| Container|attach |attach |attach | attach |
 |N/A|N/A|N/A|N/A|auto-update |
-| Image|build |N/A |D | build |
-| Container|commit |N/A |D | commit |
-| system |N/A|completion|D| E |
-| Container|cp |N/A |D | cp |
-| N/A|N/A|config|D| E |
+| Image|build |N/A |N/A | build |
+| Container|commit |N/A |N/A | commit |
+| system |N/A|completion|completion| E |
+| Container|cp |N/A |N/A | cp |
+| N/A|N/A|config|config| E |
 | Container|create |create |D | create |
-| Container|diff |N/A |D | diff |
-| system|events |N/A |D | events |
-| Container|exec |exec |D | exec |
-| Container|export |N/A |D | export |
+| Container|diff |N/A |N/A | diff |
+| system|events |N/A |N/A | events |
+| Container|exec |exec |exec | exec |
+| Container|export |N/A |N/A | export |
 |N/A|N/A|N/A|N/A|generate |
 |N/A|N/A|N/A|N/A|healthcheck |
-| Image|history |N/A |D | history |
-| Image|images |images |D | images |
-| Image|import |N/A |D | import |
-| system|info |info |D | info |
+| Image|history |inspecti |inspecti | history |
+| Image|images |images |images | images |
+| Image|N/A |imageinfo |imagefsinfo | TBA |
+| Image|import |N/A |N/A | import |
+| system|info |info |info | info |
 |N/A|N/A|N/A|N/A|init |
-| Container|inspect |inspect/inspecti/inspectp |D | inspect |
-| Container|kill |N/A |D | kill |
-| Image|load |N/A |D | load |
-| Image|login |N/A |D | login |
-| Image|logout |N/A |D | logout |
-| Container|logs |logs |D | logs |
+| Container|inspect |inspect/inspectp |inspect/inspectp | inspect |
+| Container|kill |N/A |N/A | kill |
+| Image|load |N/A |N/A | load |
+| Image|login |N/A |N/A | login |
+| Image|logout |N/A |N/A | logout |
+| Container|logs |logs |logs | logs |
 |N/A|N/A|N/A|N/A|manifest |
 |N/A|N/A|N/A|N/A|mount |
-| Container|pause|C|D|pause|
+| Container|pause|N/A|N/A|pause|
 |N/A|N/A|N/A|N/A|play |
 |N/A|N/A|N/A|N/A|pod |
-| Container|port |port-forward |D | port |
-| Container|ps |ps/pods |D | ps |
-| Image|pull |pull |D | pull |
-| Image|push |N/A |D | push |
-| Container|rename |N/A |D | rename |
-| Container|restart |N/A |D | restart |
-| Container|rm |rm/rmp |D | rm |
-| Image|rmi |rmi |D | rmi |
-| Container|run |runp |D | run |
-| Image|save |N/A |D | save |
-| Image|search |N/A |D | search |
+| Container|port |port-forward |port-forward | port |
+| Container|ps |ps/pods |ps/pods | ps |
+| Image|pull |pull |pull | pull |
+| Image|push |N/A |N/A | push |
+| Container|rename |N/A |N/A | rename |
+| Container|restart |N/A |N/A | restart |
+| Container|rm |rm/rmp |rm/rmp | rm |
+| Image|rmi |rmi |rmi | rmi |
+| Container|run |run/runp |run/runp | run |
+| Image|save |N/A |N/A | save |
+| Image|search |N/A |N/A | search |
 |N/A|N/A|N/A|N/A|secret |
-| Container|start |start |D | start |
-| Container|stats |stats |D | stats |
-| Container|stop |stop/stopp |D | stop |
+| Container|start |start |start | start |
+| Container|stats |stats |stats | stats |
+| Container|stop |stop/stopp |stop/stopp | stop |
 |N/A|N/A|N/A|N/A|system |
-| Image|tag |N/A |D | tag |
-| Container|top |N/A |D | top |
+| Image|tag |N/A |N/A | tag |
+| Container|top |N/A |N/A | top |
 |N/A|N/A|N/A|N/A|unmount |
-| Container|unpause |N/A |D | unpause |
+| Container|unpause |N/A |N/A | unpause |
 |N/A|N/A|N/A|N/A|unshare |
-| Container|update |update |D | E |
-| system|version |version |D | E |
+| Container|update |update |update | E |
+| system|version |version |version | E |
 |N/A|N/A|N/A|N/A|volume |
-| Container|wait |N/A |D | wait |
+| Container|wait |N/A |N/A | wait |
 
-## CRIO Tools
+## Container Tool Project
+https://github.com/containers
+
 Tools include:
-  * crictl - For troubleshooting and working directly with CRI-O container engines
-  * runc - For running container images
   * podman - For managing pods and container images (run, stop, start, ps, attach, exec, etc.) outside of the container engine
-  * buildah - For building, pushing and signing container images
-  * skopeo - For copying, inspecting, deleting, and signing images
+  * buildah - a tool that facilitates building Open Container Initiative (OCI) container images
+  * skopeo - Manage container image registries
 
 ##  Debugging
 | Debugging | Docker | containerd | crio | podman | 
