@@ -22,7 +22,7 @@ This artical is used to summary all changes when docker is replaced by container
 
 | Deployment | Docker | containerd | CRIO | poman |
 |----------|----------|----------|----------|----------| 
-|rpm | docker-ce-20.10.6-3.el8.x86_64 | containerd.io-1.4.4-3.1.el8.x86_64 | cri-o-1.21.0-4.1.el8.x86_64 | TBA |
+|rpm | docker-ce-20.10.6-3.el8.x86_64 | containerd.io-1.4.4-3.1.el8.x86_64 | cri-o-1.21.0-4.1.el8.x86_64 | podman-3.1.2-1.el8.2.1.x86_64 |
 
 
 
