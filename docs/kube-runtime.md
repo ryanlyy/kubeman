@@ -217,7 +217,7 @@ here 9514adf056d8 is container id
 | Container|ps |ps/pods |ps/pods | ps |
 | Image|pull |pull |pull | pull |
 | Image|push |N/A |buildah push | push |
-| Container|rename |N/A |N/A | rename |
+| Container|rename |N/A |buildah rename | rename |
 | Container|restart |N/A |N/A | restart |
 | Container|rm |rm/rmp |rm/rmp | rm |
 | Image|rmi |rmi |rmi | rmi |
