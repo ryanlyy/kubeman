@@ -193,7 +193,7 @@ here 9514adf056d8 is container id
 | Container|diff |N/A |podman diff imageid | diff |
 | system|events |N/A |N/A | events |
 | Container|exec |exec |exec | exec |
-| Container|export |N/A |build commit --format oci cid oci-archive:./imagenm.tar  | export |
+| Container|export |N/A |buildah commit --format oci cid oci-archive:./imagenm.tar  | export |
 |N/A|N/A|N/A|N/A|generate |
 |N/A|N/A|N/A|N/A|healthcheck |
 | Image|history |inspecti |inspecti | history |
