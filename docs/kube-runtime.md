@@ -4,10 +4,12 @@ This artical is used to summary all changes when docker is replaced by container
 - [Configuraiton](#configuraiton)
   - [Runtime Class](#runtime-class)
   - [kubelet container runtime](#kubelet-container-runtime)
+  - [podman configuration](#podman-configuration)
 - [Operation and Debugging](#operation-and-debugging)
   - [Unix Socket](#unix-socket)
   - [Images and Container Instance](#images-and-container-instance)
     - [crio rootfs](#crio-rootfs)
+    - [podman rootfs](#podman-rootfs)
   - [CNI](#cni)
     - [Container CNI Example](#container-cni-example)
     - [CRIO CNI Example](#crio-cni-example)
@@ -65,6 +67,14 @@ KUBELET_KUBEADM_ARGS="--container-runtime=remote --container-runtime-endpoint=un
 [root@foss-ssc-6 kubelet.service.d]#
 ```
 
+## podman configuration
+```
+#  1. /usr/share/containers/containers.conf
+#  2. /etc/containers/containers.conf
+#  3. $HOME/.config/containers/containers.conf (Rootless containers ONLY)
+```
+
+
 
 # Operation and Debugging
 ## Unix Socket
@@ -77,8 +87,8 @@ KUBELET_KUBEADM_ARGS="--container-runtime=remote --container-runtime-endpoint=un
 ## Images and Container Instance
 |     | Docker | Containerd | crio | podman |
 | --- | ------ | ---------- | ---- | ------ |
-| Images | /var/lib/docker/image/overlay2/imagedb/content/sha256/  | /var/lib/containerd/io.containerd.content.v1.content/blobs/sha256  | /var/lib/containers/storage/overlay-images | TBA |
-| Instance | ryanlyy/kdb/bin/get_container_rootfs.sh | /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots | [crio rootfs](#crio-rootfs) | TBA |
+| Images | /var/lib/docker/image/overlay2/imagedb/content/sha256/  | /var/lib/containerd/io.containerd.content.v1.content/blobs/sha256  | /var/lib/containers/storage/overlay-images | /var/lib/containers/storage/overlay-images |
+| Instance | ryanlyy/kdb/bin/get_container_rootfs.sh | /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots | [crio rootfs](#crio-rootfs) | [podman rootfs](#podman-rootfs) |
 
 docker still can be used to do:
 1. image build
@@ -93,6 +103,13 @@ buildah/podman can work well with crio to do above.
 cat /var//lib/containers/storage/overlay-containers/$(crictl --runtime-endpoint unix:///var/run/crio/crio.sock ps --no-trunc | grep 79ca67f9404e5 | awk '{ print $1 }')/userdata/state.json | jq -r '.annotations' | grep io.kubernetes.cri-o.MountPoint | awk -F ":" '{ print $2 }' | tr -s "," " "
 ```
 here 79ca67f9404e5 is container id
+
+### podman rootfs
+```
+cat /var/lib/containers/storage/overlay-containers/$(podman ps -q --no-trunc | grep 9514adf056d8)/userdata/config.json | jq -r '.root.path'
+```
+
+here 9514adf056d8 is container id
 
 ## CNI
 |     | Docker | Containerd | crio | podman |
@@ -187,7 +204,7 @@ here 79ca67f9404e5 is container id
 |N/A|N/A|N/A|N/A|init |
 | Container|inspect |inspect/inspectp |inspect/inspectp | inspect |
 | Container|kill |N/A |N/A | kill |
-| Image|load |N/A |N/A | load |
+| Image|load |N/A |podman load | load |
 | Image|login |N/A |buildah -u xxx login docker.io | login |
 | Image|logout |N/A |buildah logout docker.io | logout |
 | Container|logs |logs |logs | logs |
@@ -205,7 +222,7 @@ here 79ca67f9404e5 is container id
 | Container|rm |rm/rmp |rm/rmp | rm |
 | Image|rmi |rmi |rmi | rmi |
 | Container|run |run/runp |run/runp | run |
-| Image|save |N/A |N/A | save |
+| Image|save |N/A |podman save | save |
 | Image|search |N/A |N/A | search |
 |N/A|N/A|N/A|N/A|secret |
 | Container|start |start |start | start |
