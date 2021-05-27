@@ -190,7 +190,7 @@ here 9514adf056d8 is container id
 | Container|cp |N/A | buildah copy cidxxxx './sandbox-config.json' '/root/sandbox-config.json' | cp |
 | N/A|N/A|config|config| E |
 | Container|create |create |create | create |
-| Container|diff |N/A |N/A | diff |
+| Container|diff |N/A |podman diff imageid | diff |
 | system|events |N/A |N/A | events |
 | Container|exec |exec |exec | exec |
 | Container|export |N/A |N/A | export |
@@ -204,7 +204,7 @@ here 9514adf056d8 is container id
 |N/A|N/A|N/A|N/A|init |
 | Container|inspect |inspect/inspectp |inspect/inspectp | inspect |
 | Container|kill |N/A |N/A | kill |
-| Image|load |N/A |podman load | load |
+| Image|load |N/A |buildah pull oci-archive:./oci-myecho.tar  | load |
 | Image|login |N/A |buildah -u xxx login docker.io | login |
 | Image|logout |N/A |buildah logout docker.io | logout |
 | Container|logs |logs |logs | logs |
@@ -222,7 +222,7 @@ here 9514adf056d8 is container id
 | Container|rm |rm/rmp |rm/rmp | rm |
 | Image|rmi |rmi |rmi | rmi |
 | Container|run |run/runp |run/runp | run |
-| Image|save |N/A |podman save | save |
+| Image|save |N/A |buildah push --format oci localhost/myecho:1.0 oci-archieve:./oci-myecho.tar | save |
 | Image|search |N/A |N/A | search |
 |N/A|N/A|N/A|N/A|secret |
 | Container|start |start |start | start |
