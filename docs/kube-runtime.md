@@ -1,4 +1,4 @@
-This artical is used to summary all changes when docker is replaced by containerd, cri-o and podman
+Container Runtime: containerd, cri-o and podman
 ------------------
 - [Deployment](#deployment)
 - [Configuraiton](#configuraiton)
