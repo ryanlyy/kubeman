@@ -3,18 +3,24 @@ Kata Container -- **<span style="color:red;font-size:1em;">The speed of containe
 
 - [What is Kata-container???](#what-is-kata-container)
   - [Guest kernel](#guest-kernel)
-  - [Guest image](#guest-image)
-    - [Root filesystem image](#root-filesystem-image)
-    - [Initrd image](#initrd-image)
   - [Agent](#agent)
   - [Runtime](#runtime)
 - [CRI & Conainerd & Kata Containerd Runtime](#cri--conainerd--kata-containerd-runtime)
   - [runc & kata-container](#runc--kata-container)
 - [Kata Container Runtime Installation](#kata-container-runtime-installation)
+  - [Intsall kata-containers for Containerd](#intsall-kata-containers-for-containerd)
+  - [Install kata-containers for crio](#install-kata-containers-for-crio)
   - [kubeadm init](#kubeadm-init)
+    - [Enable containerd as runtime](#enable-containerd-as-runtime)
+    - [Enable crio as runtime](#enable-crio-as-runtime)
 - [Containerd as Runtime Configuration](#containerd-as-runtime-configuration)
   - [proxy](#proxy)
+  - [kata packages requested by Containerd](#kata-packages-requested-by-containerd)
   - [Runtime Plugin](#runtime-plugin)
+- [CRIO as runtime](#crio-as-runtime)
+  - [proxy](#proxy-1)
+  - [kata packages requested by CRIO](#kata-packages-requested-by-crio)
+  - [Runtime plugin](#runtime-plugin-1)
 - [Start Kata Container](#start-kata-container)
   - [Kata-container configuration](#kata-container-configuration)
   - [Containers](#containers)
@@ -22,7 +28,8 @@ Kata Container -- **<span style="color:red;font-size:1em;">The speed of containe
 - [Kubernetes Integration with Kata Container](#kubernetes-integration-with-kata-container)
 - [Networking](#networking)
 - [Debugging](#debugging)
-  - [How to enable debugging console](#how-to-enable-debugging-console)
+  - [Setup debug console](#setup-debug-console)
+  - [How to enable debugging console (works only for kata-containers packages intalled for containerd)](#how-to-enable-debugging-console-works-only-for-kata-containers-packages-intalled-for-containerd)
 - [Q&A](#qa)
   
 
@@ -47,20 +54,24 @@ Features
 
 The guest kernel is passed to the hypervisor and used to boot the virtual machine. The default kernel provided in Kata Containers is highly optimized for kernel boot time and minimal memory footprint, providing only those services required by a container workload. This is based on a very current upstream Linux kernel.
 
-## Guest image
-
 Kata Containers supports both an initrd and rootfs based minimal guest image.
 
-### Root filesystem image
 The default packaged root filesystem image, sometimes referred to as the "mini O/S", is a highly optimized container bootstrap system based on Clear Linux. It provides an extremely minimal environment and has a highly optimized boot path.
 
 The only services running in the context of the mini O/S are the **init daemon (systemd)** and the **Agent**. The real workload the user wishes to run is created using libcontainer, creating a container in the same manner that is done by runc
 
-### Initrd image
 
 A compressed cpio(1) archive, created from a rootfs which is loaded into memory and used as part of the Linux startup process. During startup, the kernel unpacks it into a special instance of a tmpfs that becomes the initial root filesystem.
 
 The only service running in the context of the initrd is the Agent as the init daemon. The real workload the user wishes to run is created using libcontainer, creating a container in the same manner that is done by runc.
+
+/usr/share/kata-containers/defaults/configuration.toml
+```
+[hypervisor.qemu]
+path = "/usr/libexec/qemu-kvm"
+kernel = "/var/cache/kata-containers/vmlinuz.container"
+initrd = "/var/cache/kata-containers/kata-containers-initrd.img"
+```
 
 ## Agent
 a process running in the guest as a supervisor for managing containers and processes running within those containers
@@ -69,7 +80,6 @@ a process running in the guest as a supervisor for managing containers and proce
  a containerd runtime shimv2 implementation and is responsible for handling the runtime v2 shim APIs, which is similar to the OCI runtime specification but simplifies the architecture by loading the runtime once and making RPC calls to handle the various container lifecycle commands. This refinement is an improvement on the OCI specification which requires the container manager call the runtime binary multiple times, at least once for each lifecycle command
 
 Baidu is running Kata Containers in production to support Function Computing, Cloud Container Instances, and Edge Computing
-
 
 # CRI & Conainerd & Kata Containerd Runtime
 ![CRI Container Integration with Kata Container Runtime](../pics/kata.JPG)
@@ -90,12 +100,28 @@ cat <<EOF | sudo -E tee /etc/yum.repos.d/kata-containers.repo
   gpgcheck=1
   skip_if_unavailable=1
   EOF
-install -y kata-containers
+
+  dnf install -y kata-runtime kata-proxy kata-shim 
 ```
+## Intsall kata-containers for Containerd
+
+dnf install -y kata-containers //for containerd
+
+the following shall works well too and be better
+
+dnf install -y kata-runtime kata-proxy kata-shim 
+
+## Install kata-containers for crio
+
+dnf install -y kata-runtime kata-proxy kata-shim 
+
+
 ## kubeadm init
 ```
 kubeadm init --pod-network-cidr=192.168.0.0/16  --cri-socket=unix:///run/containerd/containerd.sock
 ```
+
+### Enable containerd as runtime
 ```
 /usr/bin/kubelet --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --config=/var/lib/kubelet/config.yaml --container-runtime=remote --container-runtime-endpoint=unix:///run/containerd/containerd.sock --pod-infra-container-image=k8s.gcr.io/pause:3.4.1
 ```
@@ -104,6 +130,15 @@ kubeadm init --pod-network-cidr=192.168.0.0/16  --cri-socket=unix:///run/contain
 [root@foss-ssc-6 crio]# cat /var/lib/kubelet/kubeadm-flags.env
 KUBELET_KUBEADM_ARGS="--container-runtime=remote --container-runtime-endpoint=unix:///run/containerd/containerd.sock --pod-infra-container-image=k8s.gcr.io/pause:3.4.1"
 [root@foss-ssc-6 crio]#
+```
+
+### Enable crio as runtime
+```
+/usr/bin/kubelet --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --config=/var/lib/kubelet/config.yaml --container-runtime=remote --container-runtime-endpoint=unix:///var/run/crio/crio.sock --pod-infra-container-image=k8s.gcr.io/pause:3.4.1
+```
+
+```
+KUBELET_KUBEADM_ARGS="--container-runtime=remote --container-runtime-endpoint=unix:///var/run/crio/crio.sock --pod-infra-container-image=k8s.gcr.io/pause:3.4.1"
 ```
 
 # Containerd as Runtime Configuration
@@ -115,6 +150,8 @@ Environment=HTTPS_PROXY=http://10.158.100.9:8080
 ExecStartPre=-/sbin/modprobe overlay
 ExecStart=/usr/bin/containerd
 ```
+## kata packages requested by Containerd 
+kata-containers
 
 ## Runtime Plugin
 ```
@@ -166,6 +203,61 @@ ExecStart=/usr/bin/containerd
   runtime_type = "io.containerd.kata.v2"
   # runtime_engine is the name of the runtime engine used by containerd.
 ```
+
+# CRIO as runtime 
+## proxy
+```
+[root@foss-ssc-6 ~]# cat /etc/sysconfig/crio
+# /etc/sysconfig/crio
+
+# use "--enable-metrics" and "--metrics-port value"
+#CRIO_METRICS_OPTIONS="--enable-metrics"
+
+#CRIO_NETWORK_OPTIONS=
+#CRIO_STORAGE_OPTIONS=
+NO_PROXY="localhost,127.0.0.1,192.168.0.0/16,10.0.0.0/8,135.0.0.0/8"
+HTTP_PROXY="http://10.158.100.9:8080/"
+HTTPS_PROXY="http://10.158.100.9:8080/"
+```
+
+## kata packages requested by CRIO
+```
+kata-runtime
+kata-shim
+kata-agent
+kata-osbuilder
+kata-proxy
+```
+
+## Runtime plugin
+```
+runtime_untrusted_workload = "/usr/bin/kata-runtime"
+
+
+default_container_trust = "untrusted"
+manage_ns_lifecycle = true
+
+
+[crio.runtime.runtimes.kata-runtime]
+  runtime_path = "/usr/bin/kata-runtime"
+  runtime_type = "oci"
+
+[crio.runtime.runtimes.kata-qemu]
+  runtime_path = "/usr/bin/kata-runtime"
+  runtime_type = "oci"
+
+[crio.runtime.runtimes.kata-fc]
+  runtime_path = "/usr/bin/kata-runtime"
+  runtime_type = "oci"
+
+```
+
+/usr/share/kata-containers/defaults/configuration.toml
+```
+[shim.kata]
+path = "/usr/libexec/kata-containers/kata-shim"
+```
+
 
 # Start Kata Container
 ```
@@ -446,8 +538,11 @@ Network Interface Pairs
 ```
 
 # Debugging
+## Setup debug console
+https://github.com/kata-containers/documentation/blob/master/Developer-Guide.md#set-up-a-debug-console
 
-## How to enable debugging console
+
+## How to enable debugging console (works only for kata-containers packages intalled for containerd)
 1. update runtime config: /usr/share/kata-containers/defaults/configuration.toml
    ```
    [agent.kata]
