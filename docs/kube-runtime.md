@@ -19,6 +19,7 @@ Container Runtime: containerd, cri-o and podman
   - [No Node Access Environment](#no-node-access-environment)
 - [Application](#application)
 - [NTAS Impact](#ntas-impact)
+- [NCS Features](#ncs-features)
 
 # Deployment
 
@@ -95,8 +96,7 @@ docker still can be used to do:
 2. image tag 
 3. image push (keep registry same between docker and crio/podman/containerd)
 
-continue studying buildah/podman on above tasks.
-buildah/podman can work well with crio to do above.
+buildah/podman as tool for image/build/push etc. job and then works with crio to do above.
 
 ### crio rootfs
 ```
@@ -266,3 +266,14 @@ Tools include:
 * CI Pipeline
 * Mr Wolfe
 * 
+
+# NCS Features
+https://jiradc2.ext.net.nokia.com/browse/NCS-270
+
+NCS 22
+
+In this feature, docker engine will be removed and containerd as CRI runtime interfaces.
+
+BCMT admin container will be started by podman instead of docker anymore after this feature and using podman to push all infra + application images into local registry and then kubernetes/containerd can pull its images and start container.
+
+in Openshift, crio is used w/ buildah
