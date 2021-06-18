@@ -14,6 +14,11 @@ Kubernetes Configuration
   - [main](#main)
   - [newCmdInit](#newcmdinit)
   - [cmd.Execute()](#cmdexecute)
+    - [cmd.execute()](#cmdexecute-1)
+      - [c.RunE](#crune)
+        - [initRunner.InitData(args)](#initrunnerinitdataargs)
+        - [initRunner.Run(args)](#initrunnerrunargs)
+        - [showJoinCommand(data, out)](#showjoincommanddata-out)
 
 # .kube/config
 == /etc/kubernetes/admin.conf
@@ -451,3 +456,373 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
         return cmd, err
 }
 ```
+
+### cmd.execute()
+```go
+func (c *Command) execute(a []string) (err error) {
+        if c == nil {
+                return fmt.Errorf("Called Execute() on a nil Command")
+        }
+
+        if len(c.Deprecated) > 0 {
+                c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
+        }
+
+        // initialize help and version flag at the last point possible to allow for user
+        // overriding
+        c.InitDefaultHelpFlag()
+        c.InitDefaultVersionFlag()
+
+        err = c.ParseFlags(a)
+        if err != nil {
+                return c.FlagErrorFunc()(c, err)
+        }
+
+        // If help is called, regardless of other flags, return we want help.
+        // Also say we need help if the command isn't runnable.
+        helpVal, err := c.Flags().GetBool("help")
+        if err != nil {
+                // should be impossible to get here as we always declare a help
+                // flag in InitDefaultHelpFlag()
+                c.Println("\"help\" flag declared as non-bool. Please correct your code")
+                return err
+        }
+
+        if helpVal {
+                return flag.ErrHelp
+        }
+
+        // for back-compat, only add version flag behavior if version is defined
+        if c.Version != "" {
+                versionVal, err := c.Flags().GetBool("version")
+                if err != nil {
+                        c.Println("\"version\" flag declared as non-bool. Please correct your code")
+                        return err
+                }
+                if versionVal {
+                        err := tmpl(c.OutOrStdout(), c.VersionTemplate(), c)
+                        if err != nil {
+                                c.Println(err)
+                        }
+                        return err
+                }
+        }
+
+        if !c.Runnable() {
+                return flag.ErrHelp
+        }
+
+        c.preRun()
+        argWoFlags := c.Flags().Args()
+        if c.DisableFlagParsing {
+                argWoFlags = a
+        }
+
+        if err := c.ValidateArgs(argWoFlags); err != nil {
+                return err
+        }
+
+        for p := c; p != nil; p = p.Parent() {
+                if p.PersistentPreRunE != nil {
+                        if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
+                                return err
+                        }
+                        break
+                } else if p.PersistentPreRun != nil {
+                        p.PersistentPreRun(c, argWoFlags)
+                        break
+                }
+        }
+        if c.PreRunE != nil {
+                if err := c.PreRunE(c, argWoFlags); err != nil {
+                        return err
+                }
+        } else if c.PreRun != nil {
+                c.PreRun(c, argWoFlags)
+        }
+        if err := c.ValidateArgs(argWoFlags); err != nil {
+                return err
+        }
+
+        for p := c; p != nil; p = p.Parent() {
+                if p.PersistentPreRunE != nil {
+                        if err := p.PersistentPreRunE(c, argWoFlags); err != nil {
+                                return err
+                        }
+                        break
+                } else if p.PersistentPreRun != nil {
+                        p.PersistentPreRun(c, argWoFlags)
+                        break
+                }
+        }
+        if c.PreRunE != nil {
+                if err := c.PreRunE(c, argWoFlags); err != nil {
+                        return err
+                }
+        } else if c.PreRun != nil {
+                c.PreRun(c, argWoFlags)
+        }
+
+        if err := c.validateRequiredFlags(); err != nil {
+                return err
+        }
+        if c.RunE != nil {
+                if err := c.RunE(c, argWoFlags); err != nil {
+                        return err
+                }
+        } else {
+                c.Run(c, argWoFlags)
+        }
+        if c.PostRunE != nil {
+                if err := c.PostRunE(c, argWoFlags); err != nil {
+                        return err
+                }
+        } else if c.PostRun != nil {
+                c.PostRun(c, argWoFlags)
+        }
+        for p := c; p != nil; p = p.Parent() {
+                if p.PersistentPostRunE != nil {
+                        if err := p.PersistentPostRunE(c, argWoFlags); err != nil {
+                                return err
+                        }
+                        break
+                } else if p.PersistentPostRun != nil {
+                        p.PersistentPostRun(c, argWoFlags)
+                        break
+                }
+        }
+
+        return nil
+}
+
+```
+
+#### c.RunE
+```go
+                Use:   "init",
+                Short: "Run this command in order to set up the Kubernetes control plane",
+                RunE: func(cmd *cobra.Command, args []string) error {
+                        c, err := initRunner.InitData(args)
+                        if err != nil {
+                                return err
+                        }
+
+                        data := c.(*initData)
+                        fmt.Printf("[init] Using Kubernetes version: %s\n", data.cfg.KubernetesVersion)
+
+                        if err := initRunner.Run(args); err != nil {
+                                return err
+                        }
+
+                        return showJoinCommand(data, out)
+                },
+
+```
+##### initRunner.InitData(args)
+```go
+        // sets the data builder function, that will be used by the runner
+        // both when running the entire workflow or single phases
+        initRunner.SetDataInitializer(func(cmd *cobra.Command, args []string) (workflow.RunData, error) {
+                return newInitData(cmd, args, initOptions, out)
+        })
+
+```
+```go
+// newInitData returns a new initData struct to be used for the execution of the kubeadm init workflow.
+// This func takes care of validating initOptions passed to the command, and then it converts
+// options into the internal InitConfiguration type that is used as input all the phases in the kubeadm init workflow
+func newInitData(cmd *cobra.Command, args []string, options *initOptions, out io.Writer) (*initData, error) {
+        // Re-apply defaults to the public kubeadm API (this will set only values not exposed/not set as a flags)
+        kubeadmscheme.Scheme.Default(options.externalInitCfg)
+        kubeadmscheme.Scheme.Default(options.externalClusterCfg)
+
+        // Validate standalone flags values and/or combination of flags and then assigns
+        // validated values to the public kubeadm config API when applicable
+        var err error
+        if options.externalClusterCfg.FeatureGates, err = features.NewFeatureGate(&features.InitFeatureGates, options.featureGatesString); err != nil {
+                return nil, err
+        }
+
+        if err = validation.ValidateMixedArguments(cmd.Flags()); err != nil {
+                return nil, err
+        }
+
+        if err = options.bto.ApplyTo(options.externalInitCfg); err != nil {
+                return nil, err
+        }
+
+        // Either use the config file if specified, or convert public kubeadm API to the internal InitConfiguration
+        // and validates InitConfiguration
+        cfg, err := configutil.LoadOrDefaultInitConfiguration(options.cfgPath, options.externalInitCfg, options.externalClusterCfg)
+        if err != nil {
+                return nil, err
+        }
+        // For new clusters we want to set the kubelet cgroup driver to "systemd" unless the user is explicit about it.
+        // Currently this cannot be as part of the kubelet defaulting (Default()) because the function is called for
+        // upgrades too, which can break existing nodes after a kubelet restart.
+        // TODO: https://github.com/kubernetes/kubeadm/issues/2376
+        componentconfigs.MutateCgroupDriver(&cfg.ClusterConfiguration)
+
+        ignorePreflightErrorsSet, err := validation.ValidateIgnorePreflightErrors(options.ignorePreflightErrors, cfg.NodeRegistration.IgnorePreflightErrors)
+        if err != nil {
+                return nil, err
+        }
+        // Also set the union of pre-flight errors to InitConfiguration, to provide a consistent view of the runtime configuration:
+        cfg.NodeRegistration.IgnorePreflightErrors = ignorePreflightErrorsSet.List()
+
+        // override node name and CRI socket from the command line options
+        if options.externalInitCfg.NodeRegistration.Name != "" {
+                cfg.NodeRegistration.Name = options.externalInitCfg.NodeRegistration.Name
+        }
+        if options.externalInitCfg.NodeRegistration.CRISocket != "" {
+                cfg.NodeRegistration.CRISocket = options.externalInitCfg.NodeRegistration.CRISocket
+        }
+
+        if err := configutil.VerifyAPIServerBindAddress(cfg.LocalAPIEndpoint.AdvertiseAddress); err != nil {
+                return nil, err
+        }
+        if err := features.ValidateVersion(features.InitFeatureGates, cfg.FeatureGates, cfg.KubernetesVersion); err != nil {
+                return nil, err
+        }
+        // if dry running creates a temporary folder for saving kubeadm generated files
+        dryRunDir := ""
+        if options.dryRun {
+                // the KUBEADM_INIT_DRYRUN_DIR environment variable allows overriding the dry-run temporary
+                // directory from the command line. This makes it possible to run "kubeadm init" integration
+                // tests without root.
+                if dryRunDir, err = kubeadmconstants.CreateTempDirForKubeadm(os.Getenv("KUBEADM_INIT_DRYRUN_DIR"), "kubeadm-init-dryrun"); err != nil {
+                        return nil, errors.Wrap(err, "couldn't create a temporary directory")
+                }
+        }
+
+        // Checks if an external CA is provided by the user (when the CA Cert is present but the CA Key is not)
+        externalCA, err := certsphase.UsingExternalCA(&cfg.ClusterConfiguration)
+        if externalCA {
+                // In case the certificates signed by CA (that should be provided by the user) are missing or invalid,
+                // returns, because kubeadm can't regenerate them without the CA Key
+                if err != nil {
+                        return nil, errors.Wrapf(err, "invalid or incomplete external CA")
+                }
+
+                // Validate that also the required kubeconfig files exists and are invalid, because
+                // kubeadm can't regenerate them without the CA Key
+                kubeconfigDir := options.kubeconfigDir
+                if options.dryRun {
+                        kubeconfigDir = dryRunDir
+                }
+                if err := kubeconfigphase.ValidateKubeconfigsForExternalCA(kubeconfigDir, cfg); err != nil {
+                        return nil, err
+                }
+        }
+        // Checks if an external CA is provided by the user (when the CA Cert is present but the CA Key is not)
+        externalCA, err := certsphase.UsingExternalCA(&cfg.ClusterConfiguration)
+        if externalCA {
+                // In case the certificates signed by CA (that should be provided by the user) are missing or invalid,
+                // returns, because kubeadm can't regenerate them without the CA Key
+                if err != nil {
+                        return nil, errors.Wrapf(err, "invalid or incomplete external CA")
+                }
+
+                // Validate that also the required kubeconfig files exists and are invalid, because
+                // kubeadm can't regenerate them without the CA Key
+                kubeconfigDir := options.kubeconfigDir
+                if options.dryRun {
+                        kubeconfigDir = dryRunDir
+                }
+                if err := kubeconfigphase.ValidateKubeconfigsForExternalCA(kubeconfigDir, cfg); err != nil {
+                        return nil, err
+                }
+        }
+
+        // Checks if an external Front-Proxy CA is provided by the user (when the Front-Proxy CA Cert is present but the Front-Proxy CA Key is not)
+        externalFrontProxyCA, err := certsphase.UsingExternalFrontProxyCA(&cfg.ClusterConfiguration)
+        if externalFrontProxyCA {
+                // In case the certificates signed by Front-Proxy CA (that should be provided by the user) are missing or invalid,
+                // returns, because kubeadm can't regenerate them without the Front-Proxy CA Key
+                if err != nil {
+                        return nil, errors.Wrapf(err, "invalid or incomplete external front-proxy CA")
+                }
+        }
+
+        if options.uploadCerts && (externalCA || externalFrontProxyCA) {
+                return nil, errors.New("can't use upload-certs with an external CA or an external front-proxy CA")
+        }
+
+        return &initData{
+                cfg:                     cfg,
+                certificatesDir:         cfg.CertificatesDir,
+                skipTokenPrint:          options.skipTokenPrint,
+                dryRun:                  options.dryRun,
+                dryRunDir:               dryRunDir,
+                kubeconfigDir:           options.kubeconfigDir,
+                kubeconfigPath:          options.kubeconfigPath,
+                ignorePreflightErrors:   ignorePreflightErrorsSet,
+                externalCA:              externalCA,
+                outputWriter:            out,
+                uploadCerts:             options.uploadCerts,
+                skipCertificateKeyPrint: options.skipCertificateKeyPrint,
+                patchesDir:              options.patchesDir,
+        }, nil
+}
+```
+* Default Init Configuration
+  ```go
+    // DefaultedInitConfiguration takes a versioned init config (often populated by flags), defaults it and converts it into internal InitConfiguration
+    func DefaultedInitConfiguration(versionedInitCfg *kubeadmapiv1beta2.InitConfiguration, versionedClusterCfg *kubeadmapiv1beta2.ClusterConfiguration) (*kubeadmapi.InitConfiguration, error) {
+        internalcfg := &kubeadmapi.InitConfiguration{}
+
+        // Takes passed flags into account; the defaulting is executed once again enforcing assignment of
+        // static default values to cfg only for values not provided with flags
+        kubeadmscheme.Scheme.Default(versionedInitCfg)
+        if err := kubeadmscheme.Scheme.Convert(versionedInitCfg, internalcfg, nil); err != nil {
+                return nil, err
+        }
+
+        kubeadmscheme.Scheme.Default(versionedClusterCfg)
+        if err := kubeadmscheme.Scheme.Convert(versionedClusterCfg, &internalcfg.ClusterConfiguration, nil); err != nil {
+                return nil, err
+        }
+
+        // Applies dynamic defaults to settings not provided with flags
+        if err := SetInitDynamicDefaults(internalcfg); err != nil {
+                return nil, err
+        }
+        // Validates cfg (flags/configs + defaults + dynamic defaults)
+        if err := validation.ValidateInitConfiguration(internalcfg).ToAggregate(); err != nil {
+                return nil, err
+        }
+        return internalcfg, nil
+    }
+
+    // SetInitDynamicDefaults checks and sets configuration values for the InitConfiguration object
+    func SetInitDynamicDefaults(cfg *kubeadmapi.InitConfiguration) error {
+            //6+16: BootstrapTokenString is a token of the format abcdef.abcdef0123456789
+            //type BootstrapTokenString struct {
+            //        ID     string (6)
+            //        Secret string (16)
+            //}
+            if err := SetBootstrapTokensDynamicDefaults(&cfg.BootstrapTokens); err != nil {
+                    return err
+            }
+            // 1. Get Hostname
+            // 2. Detect CRI socket
+            if err := SetNodeRegistrationDynamicDefaults(&cfg.NodeRegistration, true); err != nil {
+                    return err
+            }
+
+            //API Server Advertise IP Address
+            if err := SetAPIEndpointDynamicDefaults(&cfg.LocalAPIEndpoint); err != nil {
+                    return err
+            }
+
+            //control plan endpoint
+            return SetClusterDynamicDefaults(&cfg.ClusterConfiguration, &cfg.LocalAPIEndpoint, &cfg.NodeRegistration)
+    }
+
+  ```
+* cgroup driver as systemd
+* Verify API Server Bind Address
+* Return initData
+  
+##### initRunner.Run(args)
+##### showJoinCommand(data, out)
