@@ -41,3 +41,13 @@ resources:
             {{- end }}
 
 ```
+
+# Enable debug log level
+```sh
+nsenter -n -i -p -t 2799598 -- curl -X POST http://127.0.0.1:15000/logging?level=debug
+```
+
+# Envoy Dump Configuration
+```sh
+nsenter -n -i -p -t 2799598 -- curl http://127.0.0.1:15000/config_dump?include_eds
+```
