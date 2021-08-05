@@ -6,6 +6,7 @@ Kubernetes Upgrade Knowledge Base
   - [Stateless Applications](#stateless-applications)
   - [Stateful Application](#stateful-application)
   - [Rolling Update](#rolling-update)
+- [Pod Lifecycle](#pod-lifecycle)
 - [Kubernetes Pod Termination Lifecycle](#kubernetes-pod-termination-lifecycle)
 - [Deployment Upgrade](#deployment-upgrade)
 - [Daemonset Upgrade & Rollback](#daemonset-upgrade--rollback)
@@ -75,6 +76,10 @@ Kubernetes Upgrade Knowledge Base
  Rolling updates allow Deployments' update to take place with **zero** downtime by incrementally updating Pods instances with new ones. The new Pods will be scheduled on Nodes with available resources
 
 By default, the maximum number of Pods that can be unavailable during the update and the maximum number of new Pods that can be created, is **one**. Of course they can be configured.
+
+# Pod Lifecycle
+
+
 
 # Kubernetes Pod Termination Lifecycle
 1. Pod is set to the “Terminating” State and removed from the endpoints list of all Services
