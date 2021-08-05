@@ -51,3 +51,16 @@ nsenter -n -i -p -t 2799598 -- curl -X POST http://127.0.0.1:15000/logging?level
 ```sh
 nsenter -n -i -p -t 2799598 -- curl http://127.0.0.1:15000/config_dump?include_eds
 ```
+
+# Envoy Version used in Istio
+```sh
+nsenter -n -i -p -t 2799598 -- curl -s -X POST http://127.0.0.1:15000/server_info |egrep -A 6 "agent.*envoy"
+  "user_agent_name": "envoy",
+  "user_agent_build_version": {
+   "version": {
+    "major_number": 1,
+    "minor_number": 18,
+    "patch": 3
+   },
+
+```
