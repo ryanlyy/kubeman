@@ -13,6 +13,9 @@ Kubernetes Debugging
   - [Delete Terminating Stuck Pod](#delete-terminating-stuck-pod)
   - [Events Debugging](#events-debugging)
   - [dd](#dd)
+- [Determine the reason for Pod Failure](#determine-the-reason-for-pod-failure)
+  - [terminationMessagePath](#terminationmessagepath)
+  - [terminationMessagePolicy](#terminationmessagepolicy)
 - [References](#references)
 
 # golang env
@@ -306,7 +309,28 @@ or  restart container
   kubectl describe node/deployment/pod...
   ```
 ## dd
+# Determine the reason for Pod Failure
+Termination messages provide a way for containers to write information about fatal events to a location where it can be easily retrieved and surfaced by tools like dashboards and monitoring software. In most cases, information that you put in a termination message should also be written to the general Kubernetes logs.
 
+## terminationMessagePath
+string	Optional: Path at which the file to which the container's termination message will be written is mounted into the container's filesystem. Message written is intended to be brief final status, such as an assertion failure message. Will be truncated by the node if greater than 4096 bytes. The total message length across all containers will be limited to 12kb. Defaults to /dev/termination-log. Cannot be updated.
+
+## terminationMessagePolicy
+string	Indicate how the termination message should be populated. File will use the contents of terminationMessagePath to populate the container status message on both success and failure. FallbackToLogsOnError will use the last chunk of container log output if the termination message file is empty and the container exited with an error. The log output is limited to 2048 bytes or 80 lines, whichever is smaller. Defaults to File. Cannot be updated.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: msg-path-demo
+spec:
+  containers:
+  - name: msg-path-demo-container
+    image: debian
+    terminationMessagePath: "/tmp/my-log"
+    terminationMessagePolicy: FallbackToLogsOnError
+```
+NOTE: signal shall be support to print termination message to termi
 # References
 * https://www.cnblogs.com/zerchin/p/kubernetes.html
 * https://github.com/brendangregg/FlameGraph

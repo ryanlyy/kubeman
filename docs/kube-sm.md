@@ -58,6 +58,49 @@ resources:
 
 ```
 
+# Example on resource and excludeport used by cnSBA
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-cnsba-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Release.Name }}-cnsba-controller
+    version: {{ .Chart.Version }}
+    app.kubernetes.io/name: {{ .Release.Name }}-cnsba-controller
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+spec:
+  serviceName: {{ .Release.Name }}-cnsba-db-mesh
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Release.Name }}-cnsba-controller
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-cnsba-controller
+        version: {{ .Chart.Version }}
+        app.kubernetes.io/name: {{ .Release.Name }}-cnsba-controller
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        release: {{ .Release.Name }}
+        vnfcType: {{ .Values.zts.vnfType}}
+        serviceType: {{ .Values.zts.vnfName}}
+      annotations:
+  {{- if .Values.serviceMesh.proxy }}
+        sidecar.istio.io/proxyCPU: "{{ .Values.serviceMesh.proxy.resources.requests.cpu }}"
+        sidecar.istio.io/proxyCPULimit: "{{ .Values.serviceMesh.proxy.resources.limits.cpu }}"
+        sidecar.istio.io/proxyMemory: "{{ .Values.serviceMesh.proxy.resources.requests.memory }}"
+        sidecar.istio.io/proxyMemoryLimit: "{{ .Values.serviceMesh.proxy.resources.limits.memory }}"
+  {{- end }}
+        traffic.sidecar.istio.io/excludeOutboundPorts: {{ .Values.serviceMesh.excludeOutboundPorts }}
+
+```
 # Enable debug log level
 ```sh
 nsenter -n -i -p -t 2799598 -- curl -X POST http://127.0.0.1:15000/logging?level=debug
