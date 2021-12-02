@@ -8,10 +8,12 @@ Kubernetes Upgrade Knowledge Base
   - [Rolling Update](#rolling-update)
 - [Pod Lifecycle](#pod-lifecycle)
 - [Kubernetes Pod Termination Lifecycle](#kubernetes-pod-termination-lifecycle)
-- [Deployment Upgrade](#deployment-upgrade)
-- [Daemonset Upgrade & Rollback](#daemonset-upgrade--rollback)
+- [Deployment](#deployment)
   - [Upgrade](#upgrade)
   - [Rollback](#rollback)
+- [Daemonset Upgrade & Rollback](#daemonset-upgrade--rollback)
+  - [Upgrade](#upgrade-1)
+  - [Rollback](#rollback-1)
 - [Statefulset Upgrade](#statefulset-upgrade)
 - [Help Upgrade](#help-upgrade)
   - [Resource Installation Order](#resource-installation-order)
@@ -96,7 +98,8 @@ By default, the maximum number of Pods that can be unavailable during the update
  
 
 
-# Deployment Upgrade
+# Deployment 
+## Upgrade
   
   **Strategy**
 
@@ -128,7 +131,15 @@ By default, the maximum number of Pods that can be unavailable during the update
       if MaxSurge == 0, then deployment update is same with sts and ds.
   
   "RollingUpdate"   is the **default** value
-  
+
+  When upgrading, it must make sure:
+
+  It makes sure that **at least** [replicas - MaxUnaviliable] Pods are available and that **at max** [replicas + MaxSurge] Pods in total are available
+
+## Rollback
+By default, all of the Deployment's rollout history is kept in the system so that you can rollback anytime you want (you can change that by modifying revision history limit).
+
+
 # Daemonset Upgrade & Rollback
 ## Upgrade
   DaemonSet has two update strategy types:
