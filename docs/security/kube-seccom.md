@@ -4,6 +4,7 @@ This page is related with seccomp
 - [seccomp Purpose](#seccomp-purpose)
 - [docker default](#docker-default)
 - [CRIO default](#crio-default)
+- [containerd default](#containerd-default)
 - [seccomp kube implementation](#seccomp-kube-implementation)
 
 
@@ -24,6 +25,9 @@ https://github.com/moby/moby/blob/master/profiles/seccomp/default.json
 /etc/crio/seccomp.json
 ```
 [CRIO runtime/default seccomp](crio-seccomp.json)
+
+# containerd default
+https://github.com/containerd/cri/blob/master/vendor/github.com/containerd/containerd/contrib/seccomp/seccomp_default.go
 
 # seccomp kube implementation
 ```golang
