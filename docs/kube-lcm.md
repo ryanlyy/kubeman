@@ -10,6 +10,7 @@ Kubernetes Upgrade Knowledge Base
 - [Kubernetes Pod Termination Lifecycle](#kubernetes-pod-termination-lifecycle)
 - [Deployment](#deployment)
   - [Upgrade](#upgrade)
+    - [maxSurge and maxUnavailable](#maxsurge-and-maxunavailable)
   - [Rollback](#rollback)
 - [Daemonset Upgrade & Rollback](#daemonset-upgrade--rollback)
   - [Upgrade](#upgrade-1)
@@ -135,6 +136,35 @@ By default, the maximum number of Pods that can be unavailable during the update
   When upgrading, it must make sure:
 
   It makes sure that **at least** [replicas - MaxUnaviliable] Pods are available and that **at max** [replicas + MaxSurge] Pods in total are available
+
+
+### maxSurge and maxUnavailable
+
+maxSugre is using Ceil and maxUnavailable is using Floor. But if both maxSurge and maxUnavailable is 0, then unavailable will be 1.
+
+ ```golang   
+        surge, err := intstrutil.GetScaledValueFromIntOrPercent(intstrutil.ValueOrDefault(maxSurge, intstrutil.FromInt(0)), int(desired), true)
+        if err != nil {
+                return 0, 0, err
+        }
+        unavailable, err := intstrutil.GetScaledValueFromIntOrPercent(intstrutil.ValueOrDefault(maxUnavailable, intstrutil.FromInt(0)), int(desired), false)
+   
+                if roundUp {
+                        value = int(math.Ceil(float64(value) * (float64(total)) / 100))
+                } else {
+                        value = int(math.Floor(float64(value) * (float64(total)) / 100))
+                }
+
+
+     if surge == 0 && unavailable == 0 {
+                // Validation should never allow the user to explicitly use zero values for both maxSurge
+                // maxUnavailable. Due to rounding down maxUnavailable though, it may resolve to zero.
+                // If both fenceposts resolve to zero, then we should set maxUnavailable to 1 on the
+                // theory that surge might not work due to quota.
+                unavailable = 1
+        }
+```
+
 
 ## Rollback
 By default, all of the Deployment's rollout history is kept in the system so that you can rollback anytime you want (you can change that by modifying revision history limit).

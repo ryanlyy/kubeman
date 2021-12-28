@@ -1,6 +1,45 @@
 This page is related with volumes
 ---
 
+- [How to change kubelet root-dir](#how-to-change-kubelet-root-dir)
+- [volumes used in NCS](#volumes-used-in-ncs)
+- [tmpfs](#tmpfs)
+- [container & Image volume](#container--image-volume)
+- [/ disk](#-disk)
+- [ephemeral storage](#ephemeral-storage)
+  - [Size](#size)
+  - [emptyDir: empty at Pod startup, with storage coming locally from the kubelet base directory (usually the root disk) or RAM](#emptydir-empty-at-pod-startup-with-storage-coming-locally-from-the-kubelet-base-directory-usually-the-root-disk-or-ram)
+  - [secret](#secret)
+  - [configMap](#configmap)
+  - [downwardAPI as volume](#downwardapi-as-volume)
+  - [CSI ephemerial volumes](#csi-ephemerial-volumes)
+  - [cephfs](#cephfs)
+  - [General ephemeral volumes](#general-ephemeral-volumes)
+- [persistent storage](#persistent-storage)
+- [how to find pod volumes](#how-to-find-pod-volumes)
+
+
+
+Ephemeral local storage is always made available in the primary partition. There are two basic ways of creating the primary partition: root and runtime.
+
+* Root
+
+This partition holds the kubelet root directory, /var/lib/kubelet/ by default, and /var/log/ directory. This partition can be shared between user pods, the OS, and Kubernetes system daemons. This partition can be consumed by pods through EmptyDir volumes, container logs, image layers, and container-writable layers. Kubelet manages shared access and isolation of this partition. This partition is ephemeral, and applications cannot expect any performance SLAs, such as disk IOPS, from this partition.
+
+* Runtime
+
+This is an optional partition that runtimes can use for overlay file systems. OpenShift Container Platform attempts to identify and provide shared access along with isolation to this partition. Container image layers and writable layers are stored here. If the runtime partition exists, the root partition does not hold any image layer or other writable storage.
+
+# How to change kubelet root-dir
+```bash
+/etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+
+Environment="KUBELET_EXTRA_ARGS=$KUBELET_EXTRA_ARGS --root-dir=/data/k8s/kubelet"
+
+--root-dir string     Default: /var/lib/kubelet
+	Directory path for managing kubelet files (volume mounts, etc).
+```
+
 # volumes used in NCS
 ```bash
 kubernetes.io~configmap
@@ -34,6 +73,29 @@ Types of tmpfs in kubernetes
 * /dev
 
 
+# container & Image volume
+```bash
+dev/mapper/vg_root-_data0 on /data0 type xfs (rw,relatime,attr2,inode64,noquota)
+```
+--data-root=/data0/docker
+```bash
+[root@hpg10ncs-hpg10ncs-masterbm-0 containers]# cat /etc/sysconfig/docker
+OPTIONS='--selinux-enabled=true --storage-driver=overlay2 --storage-opt overlay2.override_kernel_check=true --data-root=/data0/docker --live-restore --mtu=1500 --userland-proxy=false'
+[root@hpg10ncs-hpg10ncs-masterbm-0 containers]# 
+```
+
+# / disk
+```bash
+fdisk -l
+...
+5    335550464   1875384973  734.3G  Microsoft basic primary
+
+[root@hpg10ncs-hpg10ncs-masterbm-0 containers]# df -h /
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda5       735G  326G  409G  45% /
+
+```
+
 # ephemeral storage
 ## Size
 ```bash
@@ -55,7 +117,7 @@ Types of ephemeral volumes
 * CSI emphemeral volume provided by CSI driver
 * Generaic ephemeral volumes
 
-emptyDir, configMap, downwardAPI, secret are provided as local ephemeral storage. They are managed by kubelet on each node.
+emptyDir, configMap, downwardAPI are provided as local ephemeral storage. They are managed by kubelet on each node.
 
 CSI ephemeral volumes: similar to the previous volume kinds, but provided by special CSI drivers which specifically support this feature
 
@@ -204,7 +266,7 @@ w/o medium as memory, but it will use ephemeral disk instead of memory
 secret volumes are backed by **tmpfs** (a RAM-backed filesystem)
 
 ## configMap
-## downwardAPI
+## downwardAPI as volume
 https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api
 ```
 Capabilities of the Downward API
