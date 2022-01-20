@@ -1,6 +1,7 @@
 Kuberntes Tips
 ---
 
+- [How to list supported kubernetes versions](#how-to-list-supported-kubernetes-versions)
 - [How to set default namespace for kubectl](#how-to-set-default-namespace-for-kubectl)
 - [How to set ENV from Spec](#how-to-set-env-from-spec)
 - [How to set Kubectl autocomplete](#how-to-set-kubectl-autocomplete)
@@ -10,6 +11,10 @@ Kuberntes Tips
 - [Default mount volume when creating pod in kube 1.21](#default-mount-volume-when-creating-pod-in-kube-121)
 - [Which kubeconfig shall be used by kubectl](#which-kubeconfig-shall-be-used-by-kubectl)
 
+# How to list supported kubernetes versions
+```bash
+curl -s https://packages.cloud.google.com/apt/dists/kubernetes-xenial/main/binary-amd64/Packages | grep Version
+```
 # How to set default namespace for kubectl
 ```
 kubectl config set-context --current --namespace=<insert-namespace-name-here>
