@@ -8,6 +8,18 @@ Kubernetes Networking
 - [Network Policy](#network-policy)
   
 # network namespace creation
+```bash
+linux-5.4.45:
+/* 0 - Keep current behavior:
+ *     IPv4: inherit all current settings from init_net
+ *     IPv6: reset all settings to default
+ * 1 - Both inherit all current settings from init_net
+ * 2 - Both reset all settings to default
+ */
+int sysctl_devconf_inherit_init_net __read_mostly;
+```
+net.core.devconf_inherit_init_net = 0
+
 pure_initcall(net_ns_init);
 
 net_ns_init is used to init network namespace as entry
