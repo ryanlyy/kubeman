@@ -8,6 +8,8 @@ Kubernetes Networking
 - [Network Policy](#network-policy)
   
 # network namespace creation
+please make sure kernel version for netns default and all sysctl configuration which is inherit from init_net or using hardcoded default
+
 ```bash
 linux-5.4.45:
 /* 0 - Keep current behavior:
