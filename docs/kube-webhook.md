@@ -6,7 +6,16 @@ Kubernetes Webhook
     - [Admission Plugin supported - v1.23](#admission-plugin-supported---v123)
     - [Admission Plugin enabled by default - v1.23](#admission-plugin-enabled-by-default---v123)
   - [How to enable/disble admission plugins](#how-to-enabledisble-admission-plugins)
-  - [Cluster Wide PodSecurity Level](#cluster-wide-podsecurity-level)
+- [Cluster Wide PodSecurity Level](#cluster-wide-podsecurity-level)
+- [MutatingAdmissionWebhook & ValidatingAdmissionWebhook](#mutatingadmissionwebhook--validatingadmissionwebhook)
+  - [What are admission webhooks?](#what-are-admission-webhooks)
+  - [Prerequisites](#prerequisites)
+  - [Write an admission webhook server](#write-an-admission-webhook-server)
+  - [Deploy the admission webhook service](#deploy-the-admission-webhook-service)
+  - [Configure admission webhooks on the fly](#configure-admission-webhooks-on-the-fly)
+    - [Matching request: rule](#matching-request-rule)
+  - [Contacting the webhook](#contacting-the-webhook)
+  - [Examples](#examples)
 
 # Admission Plugin
 ## v1.23
@@ -71,7 +80,7 @@ Kubernetes Webhook
 * --disable-admission-plugins strings 
 * --enable-admission-plugins strings
 
-## Cluster Wide PodSecurity Level
+# Cluster Wide PodSecurity Level
 
 By default, the default PodSecurity level  in cluster wide is "**privileged**" when where is no mode level labed in namespace
 
@@ -175,3 +184,102 @@ plugins:
       # Array of namespaces to exempt.
       namespaces: []
 ```
+
+# MutatingAdmissionWebhook & ValidatingAdmissionWebhook
+
+This admission controller calls any mutating webhooks which match the request. Matching webhooks are called in **serial**; each one may modify the object if it desires.
+
+This admission controller (as implied by the name) only runs in the mutating phase.
+
+In addition to compiled-in admission plugins, admission plugins can be developed as extensions and run as webhooks configured at runtime. This page describes how to build, configure, use, and monitor admission webhooks.
+
+## What are admission webhooks?
+Admission webhooks are HTTP callbacks that receive admission requests and do something with them. 
+
+You can define two types of admission webhooks
+* validating admission webhook
+* mutating admission webhook. 
+ 
+Mutating admission webhooks are invoked first, and can modify objects sent to the API server to enforce custom defaults. After all object modifications are complete, and after the incoming object is validated by the API server, validating admission webhooks are invoked and can reject requests to enforce custom policies.
+
+Admission webhooks are essentially part of the **cluster control-plane**
+
+## Prerequisites
+* v1.16 (to use admissionregistration.k8s.io/v1), or v1.9 (to use admissionregistration.k8s.io/v1beta1)
+* Ensure that MutatingAdmissionWebhook and ValidatingAdmissionWebhook admission controllers are enabled by --enable-admission-plugins. by default they are enabled by k8s
+* admissionregistration.k8s.io/v1 or admissionregistration.k8s.io/v1beta1 API is enabled
+
+## Write an admission webhook server
+N/A
+https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#write-an-admission-webhook-server
+
+## Deploy the admission webhook service
+N/A
+https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#deploy-the-admission-webhook-service
+
+## Configure admission webhooks on the fly
+dynamically configure what resources are subject to what admission webhooks via ValidatingWebhookConfiguration or MutatingWebhookConfiguration.
+
+```yaml
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: "pod-policy.example.com"
+webhooks:
+- name: "pod-policy.example.com"
+  rules:
+  - apiGroups:   [""]
+    apiVersions: ["v1"]
+    operations:  ["CREATE"]
+    resources:   ["pods"]
+    scope:       "Namespaced"
+  clientConfig:
+    service:
+      namespace: "example-namespace"
+      name: "example-service"
+    caBundle: "Ci0tLS0tQk...<`caBundle` is a PEM encoded CA bundle which will be used to validate the webhook's server certificate.>...tLS0K"
+  admissionReviewVersions: ["v1", "v1beta1"]
+  sideEffects: None
+  timeoutSeconds: 5
+```
+
+```yaml
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+...
+webhooks:
+- name: my-webhook.example.com
+  rules:
+  - operations: ["CREATE", "UPDATE"]
+    apiGroups: ["apps"]
+    apiVersions: ["v1", "v1beta1"]
+    resources: ["deployments", "replicasets"]
+    scope: "Namespaced"
+  ...
+```
+
+### Matching request: rule
+Each webhook must specify a list of rules used to determine if a request to the API server should be sent to the webhook. Each rule specifies one or more operations, apiGroups, apiVersions, and resources, and a resource scope:
+
+* operations lists one or more operations to match. Can be "CREATE", "UPDATE", "DELETE", "CONNECT", or "*" to match all.
+* apiGroups lists one or more API groups to match. "" is the core API group. "*" matches all API groups.
+* apiVersions lists one or more API versions to match. "*" matches all API versions.
+* resources lists one or more resources to match.
+  * "*" matches all resources, but not subresources.
+  * "*/*" matches all resources and subresources.
+  * "pods/*" matches all subresources of pods.
+  * "*/status" matches all status subresources.
+* scope specifies a scope to match. Valid values are "Cluster", "Namespaced", and "*". Subresources match the scope of their parent resource. Supported in v1.14+. Default is "*", matching pre-1.14 behavior.
+  * "Cluster" means that only cluster-scoped resources will match this rule (Namespace API objects are cluster-scoped).
+  * "Namespaced" means that only namespaced resources will match this rule.
+  * "*" means that there are no scope restrictions.
+
+If an incoming request matches one of the specified operations, groups, versions, resources, and scope for any of a webhook's rules, the request is sent to the webhook.
+
+## Contacting the webhook
+Once the API server has determined a request should be sent to a webhook, it needs to know how to contact the webhook. This is specified in the clientConfig stanza of the webhook configuration.
+
+Webhooks can either be called via a URL or a service reference, and can optionally include a custom CA bundle to use to verify the TLS connection
+
+## Examples
+[Webhook Examples](../webhook/DLB%20IP%20fixing.zip)

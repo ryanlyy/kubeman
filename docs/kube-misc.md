@@ -1,6 +1,8 @@
 Kuberntes Tips
 ---
 
+- [How to set Kubernetes Resource Namespace](#how-to-set-kubernetes-resource-namespace)
+- [How to rejoin node](#how-to-rejoin-node)
 - [How to list supported kubernetes versions](#how-to-list-supported-kubernetes-versions)
 - [How to set default namespace for kubectl](#how-to-set-default-namespace-for-kubectl)
 - [How to set ENV from Spec](#how-to-set-env-from-spec)
@@ -11,6 +13,21 @@ Kuberntes Tips
 - [Default mount volume when creating pod in kube 1.21](#default-mount-volume-when-creating-pod-in-kube-121)
 - [Which kubeconfig shall be used by kubectl](#which-kubeconfig-shall-be-used-by-kubectl)
 
+# How to set Kubernetes Resource Namespace
+* helm -n <ns>
+* kubectl -n <ns>
+* .metadata.namespace: tstbed
+
+NOTE: .metadata.namespace will override helm/kubectl -n <ns>
+
+# How to rejoin node
+```bash
+root@k8s-controler-1:~# kubeadm token generate
+og6new.brkrzpjdnfnsmupq
+root@k8s-controler-1:~# kubeadm token create og6new.brkrzpjdnfnsmupq --print-join-command
+kubeadm join 192.168.122.250:9443 --token og6new.brkrzpjdnfnsmupq --discovery-token-ca-cert-hash sha256:9a597ff94b2359e0b3d9d18add4e741ccab01293d6db3b43ec67d54af7331d2d 
+
+```
 # How to list supported kubernetes versions
 ```bash
 curl -s https://packages.cloud.google.com/apt/dists/kubernetes-xenial/main/binary-amd64/Packages | grep Version
