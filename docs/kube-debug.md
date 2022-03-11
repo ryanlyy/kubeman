@@ -11,6 +11,7 @@ Kubernetes Debugging
   - [kubernetes admission controller](#kubernetes-admission-controller)
   - [Debuggin gwith an ephemeral containers](#debuggin-gwith-an-ephemeral-containers)
     - [Shortage:](#shortage)
+    - [References](#references)
   - [Service Debugging](#service-debugging)
   - [Delete Terminating Stuck Pod](#delete-terminating-stuck-pod)
   - [Events Debugging](#events-debugging)
@@ -18,7 +19,7 @@ Kubernetes Debugging
 - [Determine the reason for Pod Failure](#determine-the-reason-for-pod-failure)
   - [terminationMessagePath](#terminationmessagepath)
   - [terminationMessagePolicy](#terminationmessagepolicy)
-- [References](#references)
+- [References](#references-1)
 
 # golang env
 This debugging env can be setup into local/private machine instead of customer live site. When debugging target customer issue, run some cmds like curl from customer site and ship those files into this local debugging env and generate some report.
@@ -293,36 +294,111 @@ Ephemeral containers may be run in an existing pod to perform user-initiated act
 
 In order to add an ephemeral container to an existing pod, use the pod's ephemeralcontainers subresource. This field is beta-level and available on clusters that haven't disabled the EphemeralContainers feature gate.
 
-```json
-{
-    "apiVersion": "v1",
-    "kind": "Pod",
-    "metadata": {
-	    "name": "ephemeral-demo"
-    },
-    "spec": {
-    "ephemeralContainers": [{
-        "command": [
-            "sh"
-        ],
-        "image": "busybox:20220311",
-        "imagePullPolicy": "IfNotPresent",
-        "name": "debugger",
-        "stdin": true,
-        "tty": true,
-        "terminationMessagePolicy": "File",
-	      "securityContext": {
-           "capabilities": {
-              "add": ["NET_ADMIN", "NET_RAW"]
-	   }
-	}
-    }]
+* Pod yaml
+  ```yaml
+  apiVersion: v1
+  kind: Pod
+  metadata:
+    labels:
+      app: ephemeral-demo
+    name: ephemeral-demo
+  spec:
+    containers:
+    - image: ryanlyy/centos-tc:20210526
+      imagePullPolicy: IfNotPresent
+      name: ephemeral-demo
+      command:
+      - bash
+      - -c 
+      - sleep 6000000000
+      securityContext: 
+        capabilities:
+          drop: ["ALL"]
+        #privileged: true
+        runAsNonRoot: true
+        runAsUser: 2000
+        allowPrivilegeEscalation: false
+  ```
+* Debug patch.yaml
+  ```json
+  {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "name": "ephemeral-demo"
+      },
+      "spec": {
+      "ephemeralContainers": [{
+          "command": [
+              "sh"
+          ],
+          "image": "busybox:20220311",
+          "imagePullPolicy": "IfNotPresent",
+          "name": "debugger",
+          "stdin": true,
+          "tty": true,
+          "terminationMessagePolicy": "File",
+          "securityContext": {
+            "capabilities": {
+                "add": ["NET_ADMIN", "NET_RAW"]
+      }
     }
-}
-```
-```bash
-kubectl replace --raw /api/v1/namespaces/default/pods/ephemeral-demo/ephemeralcontainers -f debug.json
-```
+      }]
+      }
+  }
+  ```
+
+* Update
+  
+  ```bash
+  kubectl replace --raw /api/v1/namespaces/default/pods/ephemeral-demo/ephemeralcontainers -f debug.json
+  ```
+
+* Pod running manifest
+  ```yaml
+  spec:
+  containers:
+  - command:
+    - bash
+    - -c
+    - sleep 6000000000
+    image: ryanlyy/centos-tc:20210526
+    imagePullPolicy: IfNotPresent
+    name: ephemeral-demo
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      runAsNonRoot: true
+      runAsUser: 2000
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-dx94z
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  ephemeralContainers:
+  - command:
+    - sh
+    image: busybox:20220311
+    imagePullPolicy: IfNotPresent
+    name: debugger
+    resources: {}
+    securityContext:
+      capabilities:
+        add:
+        - NET_ADMIN
+        - NET_RAW
+    stdin: true
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    tty: true
+
+  ```
 
 After added into ephemeral container, it is running status. At this time, you can attach into this container (but exec does not work). when you exit from this container, it will be finished. if you want to attach into it again, start it using docker start (you need to access node)
 
@@ -338,7 +414,7 @@ Like regular containers, you may not change or remove an ephemeral container aft
 * May lead pod evict
 * add security risk
 
-
+### References
 * https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/
 * https://medium.com/01001101/ephemeral-containers-the-future-of-kubernetes-workload-debugging-c5b7ded3019f
 
