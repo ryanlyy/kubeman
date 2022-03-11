@@ -12,6 +12,7 @@ Kuberntes Tips
 - [What is default resource gernated when creating namespaces](#what-is-default-resource-gernated-when-creating-namespaces)
 - [Default mount volume when creating pod in kube 1.21](#default-mount-volume-when-creating-pod-in-kube-121)
 - [Which kubeconfig shall be used by kubectl](#which-kubeconfig-shall-be-used-by-kubectl)
+- [namespace configured in manifest has high priority than value specified in helm install](#namespace-configured-in-manifest-has-high-priority-than-value-specified-in-helm-install)
 
 # How to set Kubernetes Resource Namespace
 * helm -n <ns>
@@ -138,3 +139,22 @@ lrwxrwxrwx 1 root root 12 Jun 17 05:54 token -> ..data/token
   * use --kubeconfig flag, if specified
   * use KUBECONFIG environment variable, if specified
   * use $HOME/.kube/config file
+
+# namespace configured in manifest has high priority than value specified in helm install
+```yaml
+apiVersion: apps/v1
+#kind: ReplicaSet
+kind: Deployment
+metadata:
+  name: {{ include "tstbed.fullname" . }}
+  namespace: tstbed
+  labels:
+    {{- include "tstbed.labels" . | nindent 4 }}
+spec:
+```
+
+```bash
+helm3 install abc ./tstbed -n test
+```
+
+The deployment resource is deployed in tstbed instead of test.

@@ -7,8 +7,10 @@ Kubernetes Debugging
   - [pprof Profile](#pprof-profile)
   - [pprof Trace](#pprof-trace)
 - [Monitoring, Logging and Debugging](#monitoring-logging-and-debugging)
+  - [kubernetes Feature Gate](#kubernetes-feature-gate)
+  - [kubernetes admission controller](#kubernetes-admission-controller)
   - [Debuggin gwith an ephemeral containers](#debuggin-gwith-an-ephemeral-containers)
-  - [Feature Gate](#feature-gate)
+    - [Shortage:](#shortage)
   - [Service Debugging](#service-debugging)
   - [Delete Terminating Stuck Pod](#delete-terminating-stuck-pod)
   - [Events Debugging](#events-debugging)
@@ -176,12 +178,7 @@ git clone https://github.com/brendangregg/FlameGraph.git
   ```
 
 # Monitoring, Logging and Debugging
-## Debuggin gwith an ephemeral containers
-Ephemeral containers are useful for interactive troubleshooting when kubectl exec is insufficient because a container has crashed or a container image doesn't include debugging utilities. 
-
-require the EphemeralContainers feature gate enabled in your cluster and kubectl version v1.18 or later
-
-## Feature Gate
+## kubernetes Feature Gate
 
 https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/
 
@@ -272,6 +269,80 @@ kube-apiserver --help
   WinDSR=true|false (ALPHA - default=false)
   WinOverlay=true|false (ALPHA - default=false)
 ```
+
+## kubernetes admission controller
+```bash
+      --admission-control strings              Admission is divided into two phases. In the first phase, only mutating admission plugins run. In the second phase, only validating admission plugins run. The names in the below list may represent a validating plugin, a mutating plugin, or both. The order of plugins in which they are passed to this flag does not matter. Comma-delimited list of: AlwaysAdmit, AlwaysDeny, AlwaysPullImages, CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, DefaultStorageClass, DefaultTolerationSeconds, DenyServiceExternalIPs, EventRateLimit, ExtendedResourceToleration, ImagePolicyWebhook, LimitPodHardAntiAffinityTopology, LimitRanger, MutatingAdmissionWebhook, NamespaceAutoProvision, NamespaceExists, NamespaceLifecycle, NodeRestriction, OwnerReferencesPermissionEnforcement, PersistentVolumeClaimResize, PersistentVolumeLabel, PodNodeSelector, PodSecurity, PodSecurityPolicy, PodTolerationRestriction, Priority, ResourceQuota, RuntimeClass, SecurityContextDeny, ServiceAccount, StorageObjectInUseProtection, TaintNodesByCondition, ValidatingAdmissionWebhook. (DEPRECATED: Use --enable-admission-plugins or --disable-admission-plugins instead. Will be removed in a future version.)
+      --admission-control-config-file string   File with admission control configuration.
+      --disable-admission-plugins strings      admission plugins that should be disabled although they are in the default enabled plugins list (NamespaceLifecycle, LimitRanger, ServiceAccount, TaintNodesByCondition, PodSecurity, Priority, DefaultTolerationSeconds, DefaultStorageClass, StorageObjectInUseProtection, PersistentVolumeClaimResize, RuntimeClass, CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, MutatingAdmissionWebhook, ValidatingAdmissionWebhook, ResourceQuota). Comma-delimited list of admission plugins: AlwaysAdmit, AlwaysDeny, AlwaysPullImages, CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, DefaultStorageClass, DefaultTolerationSeconds, DenyServiceExternalIPs, EventRateLimit, ExtendedResourceToleration, ImagePolicyWebhook, LimitPodHardAntiAffinityTopology, LimitRanger, MutatingAdmissionWebhook, NamespaceAutoProvision, NamespaceExists, NamespaceLifecycle, NodeRestriction, OwnerReferencesPermissionEnforcement, PersistentVolumeClaimResize, PersistentVolumeLabel, PodNodeSelector, PodSecurity, PodSecurityPolicy, PodTolerationRestriction, Priority, ResourceQuota, RuntimeClass, SecurityContextDeny, ServiceAccount, StorageObjectInUseProtection, TaintNodesByCondition, ValidatingAdmissionWebhook. The order of plugins in this flag does not matter.
+      --enable-admission-plugins strings       admission plugins that should be enabled in addition to default enabled ones (NamespaceLifecycle, LimitRanger, ServiceAccount, TaintNodesByCondition, PodSecurity, Priority, DefaultTolerationSeconds, DefaultStorageClass, StorageObjectInUseProtection, PersistentVolumeClaimResize, RuntimeClass, CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, MutatingAdmissionWebhook, ValidatingAdmissionWebhook, ResourceQuota). Comma-delimited list of admission plugins: AlwaysAdmit, AlwaysDeny, AlwaysPullImages, CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, DefaultStorageClass, DefaultTolerationSeconds, DenyServiceExternalIPs, EventRateLimit, ExtendedResourceToleration, ImagePolicyWebhook, LimitPodHardAntiAffinityTopology, LimitRanger, MutatingAdmissionWebhook, NamespaceAutoProvision, NamespaceExists, NamespaceLifecycle, NodeRestriction, OwnerReferencesPermissionEnforcement, PersistentVolumeClaimResize, PersistentVolumeLabel, PodNodeSelector, PodSecurity, PodSecurityPolicy, PodTolerationRestriction, Priority, ResourceQuota, RuntimeClass, SecurityContextDeny, ServiceAccount, StorageObjectInUseProtection, TaintNodesByCondition, ValidatingAdmissionWebhook. The order of plugins in this flag does not matter.
+```
+
+## Debuggin gwith an ephemeral containers
+Ephemeral containers are useful for interactive troubleshooting when kubectl exec is insufficient because a container has crashed or a container image doesn't include debugging utilities. 
+
+require the EphemeralContainers feature gate enabled in your cluster and kubectl version v1.18 or later
+
+https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/277-ephemeral-containers/README.md
+
+ephemeralContainers
+
+Ephemeral containers may be run in an existing pod to perform user-initiated actions such as debugging. 
+
+**This list cannot be specified when creating a pod, and it cannot be modified by updating the pod spec.**
+
+In order to add an ephemeral container to an existing pod, use the pod's ephemeralcontainers subresource. This field is beta-level and available on clusters that haven't disabled the EphemeralContainers feature gate.
+
+```json
+{
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+	    "name": "ephemeral-demo"
+    },
+    "spec": {
+    "ephemeralContainers": [{
+        "command": [
+            "sh"
+        ],
+        "image": "busybox:20220311",
+        "imagePullPolicy": "IfNotPresent",
+        "name": "debugger",
+        "stdin": true,
+        "tty": true,
+        "terminationMessagePolicy": "File",
+	      "securityContext": {
+           "capabilities": {
+              "add": ["NET_ADMIN", "NET_RAW"]
+	   }
+	}
+    }]
+    }
+}
+```
+```bash
+kubectl replace --raw /api/v1/namespaces/default/pods/ephemeral-demo/ephemeralcontainers -f debug.json
+```
+
+After added into ephemeral container, it is running status. At this time, you can attach into this container (but exec does not work). when you exit from this container, it will be finished. if you want to attach into it again, start it using docker start (you need to access node)
+
+Like regular containers, you may not change or remove an ephemeral container after you have added it to a Pod
+
+```bash
+* spec.ephemeralContainers: Forbidden: existing ephemeral containers "debugger" may not be removed
+```
+
+### Shortage:
+* can't restart using kubectl
+* cant remove/change from pod
+* May lead pod evict
+* add security risk
+
+
+* https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/
+* https://medium.com/01001101/ephemeral-containers-the-future-of-kubernetes-workload-debugging-c5b7ded3019f
+
+
 ## Service Debugging
 * Check if endpoints exist for that service
   ```

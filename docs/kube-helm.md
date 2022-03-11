@@ -2,11 +2,21 @@ This page is related with kube helm knowledge
 ---
 
 - [Parameters](#parameters)
-  - [--wait](#--wait)
+	- [--wait](#--wait)
 - [Helm Install](#helm-install)
 - [Helm Upgrade](#helm-upgrade)
-  - [Update w/ --force](#update-w---force)
-  - [Update w/o --force](#update-wo---force)
+	- [Update w/ --force](#update-w---force)
+	- [Update w/o --force](#update-wo---force)
+- [Helm Template](#helm-template)
+	- [Named Templates](#named-templates)
+	- [Declaring and using templates w/ "define" and "template"](#declaring-and-using-templates-w-define-and-template)
+	- ["include" function](#include-function)
+	- ["required" funciton](#required-funciton)
+	- ["tpl" function](#tpl-function)
+	- ["default" funciton](#default-funciton)
+	- ["trunc" and "trimSuffix" function](#trunc-and-trimsuffix-function)
+	- [Good Example using tpl](#good-example-using-tpl)
+- [How to debug helm template fail](#how-to-debug-helm-template-fail)
 
 
 # Parameters
@@ -325,3 +335,134 @@ obj, err = helper.Patch(target.Namespace, target.Name, patchType, patch, nil)
 
 }
 ```
+
+# Helm Template
+
+## Named Templates
+
+* Most files in templates/ are treated as if they contain Kubernetes manifests
+* The NOTES.txt is one exception
+* But files whose name begins with an underscore (_) are assumed to not have a manifest inside. These files are not rendered to Kubernetes object definitions, but are **available everywhere within other chart templates for use**.
+
+## Declaring and using templates w/ "define" and "template"
+
+* simple one
+
+```yaml
+{{ define "MY.NAME" }}
+  # body of template here
+{{ end }}
+
+{{/* Generate basic labels */}}
+{{- define "mychart.labels" }}
+  labels:
+    generator: helm
+    date: {{ now | htmlDate }}
+{{- end }}
+
+#using "mychart.lables"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-configmap
+  {{- template "mychart.labels" . }}
+data:
+  myvalue: "Hello World"
+  {{- range $key, $val := .Values.favorite }}
+  {{ $key }}: {{ $val | quote }}
+  {{- end }}
+```
+
+the template that is substituted in has the text aligned to the left. Because template is an action, and not a function, there is no way to pass the output of a template call to other functions; the data is simply inserted inline
+
+## "include" function
+
+Helm provides an alternative named "include" to template that will import the contents of a template into the present pipeline where it can be passed along to other functions in the pipeline.
+
+```yaml
+{{ include "mychart.app" . | indent 2 }}
+```
+
+```yaml
+{{ include "toYaml" $value | indent 2 }}
+```
+The above includes a template called toYaml, passes it $value, and then passes the output of that template to the indent function.
+
+
+## "required" funciton
+
+```yaml
+{{ required "A valid foo is required!" .Values.foo }}
+```
+The above will render the template when .Values.foo is defined, but will fail to render and exit when .Values.foo is undefined.
+
+
+## "tpl" function
+The tpl function allows developers to evaluate strings as templates inside a template. This is useful to pass a template string as a value to a chart or render external configuration files. Syntax: {{ tpl TEMPLATE_STRING VALUES }}
+
+```yaml
+# values
+template: "{{ .Values.name }}"
+name: "Tom"
+
+# template
+{{ tpl .Values.template . }}
+
+# output
+Tom
+```
+
+## "default" funciton
+
+default DEFAULT_VALUE GIVEN_VALUE
+
+```yaml
+drink: {{ .Values.favorite.drink | default "tea" | quote }}
+```
+
+```yaml
+{{- define "tstbed.name" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
+```
+if .Values.nameOverride defined then using it else using .Chart.Name
+
+
+## "trunc" and "trimSuffix" function
+```yaml
+{{- define "tstbed.fullname" -}}
+
+{{- if .Values.fullnameOverride }}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+
+{{- else }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
+{{- if contains $name .Release.Name }}
+{{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- end }}
+{{- end }}
+```
+if .Values.fullnameOverride defubedm then tstbed.fullname is .Values.fullnameOverride; 
+else
+	if .Values.nameOverride defined, name = .Values.nameOverride; else name = .Chart.Name
+	if name containers .ReleaeName then tstbed.fullname = .Release.Name
+	else  tstbed.fullname = "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" 
+
+
+## Good Example using tpl
+```yaml
+
+```
+
+
+# How to debug helm template fail
+
+```bash
+helm install --dry-run --disable-openapi-validation moldy-jaguar ./mychart
+```
+
+Check above cmd output, you will find where is wrong
