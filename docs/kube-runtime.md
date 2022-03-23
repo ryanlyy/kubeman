@@ -180,64 +180,64 @@ here 9514adf056d8 is container id
 
 ## Command Comparision
 
-| Catelog | Docker (docker) | Containerd(crictl) | CRIO(crictl)  | podman |
-|----------- |----------- |----------- |----------- |----------- |
-| Container|attach |attach |attach | attach |
-|N/A|N/A|N/A|N/A|auto-update |
-| Image|build |N/A |buildah bud -t xx:yy -f Dockerfile . (same with docker build) | build |
-| Container|commit |N/A |buildah commit cidxxxxx newimage:abc | commit |
-| system |N/A|completion|completion| E |
-| Container|cp |N/A | buildah copy cidxxxx './sandbox-config.json' '/root/sandbox-config.json' | cp |
-| N/A|N/A|config|config| E |
-| Container|create |create |create | create |
-| Container|diff |N/A |podman diff imageid | diff |
-| system|events |N/A |N/A | events |
-| Container|exec |exec |exec | exec |
-| Container|export |N/A |buildah commit --format oci cid oci-archive:./imagenm.tar  | export |
-|N/A|N/A|N/A|N/A|generate |
-|N/A|N/A|N/A|N/A|healthcheck |
-| Image|history |inspecti |inspecti | history |
-| Image|images |images |images | images |
-| Image|N/A |imageinfo |imagefsinfo | TBA |
-| Image|import |N/A |N/A | import |
-| system|info |info |info | info |
-|N/A|N/A|N/A|N/A|init |
-| Container|inspect |inspect/inspectp |inspect/inspectp | inspect |
-| Container|kill |N/A |N/A | kill |
-| Image|load |N/A |buildah pull oci-archive:./oci-myecho.tar  | load |
-| Image|login |N/A |buildah -u xxx login docker.io | login |
-| Image|logout |N/A |buildah logout docker.io | logout |
-| Container|logs |logs |logs | logs |
-|N/A|N/A|N/A|N/A|manifest |
-|N/A|N/A|N/A|N/A|mount |
-| Container|pause|N/A|N/A|pause|
-|N/A|N/A|N/A|N/A|play |
-|N/A|N/A|N/A|N/A|pod |
-| Container|port |port-forward |port-forward | port |
-| Container|ps |ps/pods |ps/pods | ps |
-| Image|pull |pull |pull | pull |
-| Image|push |N/A |buildah push | push |
-| Container|rename |N/A |buildah rename | rename |
-| Container|restart |N/A |N/A | restart |
-| Container|rm |rm/rmp |rm/rmp | rm |
-| Image|rmi |rmi |rmi | rmi |
-| Container|run |run/runp |run/runp | run |
-| Image|save |N/A |buildah push --format oci localhost/myecho:1.0 oci-archieve:./oci-myecho.tar | save |
-| Image|search |N/A |N/A | search |
-|N/A|N/A|N/A|N/A|secret |
-| Container|start |start |start | start |
-| Container|stats |stats |stats | stats |
-| Container|stop |stop/stopp |stop/stopp | stop |
-|N/A|N/A|N/A|N/A|system |
-| Image|tag |N/A |buildah tag | tag |
-| Container|top |N/A |N/A | top |
-|N/A|N/A|N/A|N/A|unmount |
-| Container|unpause |N/A |N/A | unpause |
-|N/A|N/A|N/A|N/A|unshare |
-| Container|update |update |update | E |
-| system|version |version |version | E |
-|N/A|N/A|N/A|N/A|volume |
-| Container|wait |N/A |N/A | wait |
+| Catelog | Docker (docker) | Containerd(crictl) | CRIO(crictl)  | podman | containerd(ctr) |
+|----------- |----------- |----------- |----------- |----------- |----------- |
+| Container|attach |attach |attach | attach | task attach |
+|N/A|N/A|N/A|N/A|auto-update |N/A|
+| Image|build |N/A |buildah bud -t xx:yy -f Dockerfile . (same with docker build) | build | N/A |
+| Container|commit |N/A |buildah commit cidxxxxx newimage:abc | commit | N/A |
+| system |N/A|completion|completion| E | N/A|
+| Container|cp |N/A | buildah copy cidxxxx './sandbox-config.json' '/root/sandbox-config.json' | cp | N/A |
+| N/A|N/A|config|config| E | N/A |
+| Container|create |create |create | create | create |
+| Container|diff |N/A |podman diff imageid | diff | N/A |
+| system|events |N/A |N/A | events | events |
+| Container|exec |exec |exec | exec | task exec |
+| Container|export |N/A |buildah commit --format oci cid oci-archive:./imagenm.tar  | export | eport |
+|N/A|N/A|N/A|N/A|generate | N/A |
+|N/A|N/A|N/A|N/A|healthcheck | N/A |
+| Image|history |inspecti |inspecti | history | N/A |
+| Image|images |images |images | images | images ls |
+| Image|N/A |imageinfo |imagefsinfo | TBA | N/A |
+| Image|import |N/A |N/A | import | import |
+| system|info |info |info | info | N/A |
+|N/A|N/A|N/A|N/A|init | N/A |
+| Container|inspect |inspect/inspectp |inspect/inspectp | inspect | c info |
+| Container|kill |N/A |N/A | kill | task kill |
+| Image|load |N/A |buildah pull oci-archive:./oci-myecho.tar  | load | N/A |
+| Image|login |N/A |buildah -u xxx login docker.io | login | N/A |
+| Image|logout |N/A |buildah logout docker.io | logout | N/A |
+| Container|logs |logs |logs | logs | N/A |
+|N/A|N/A|N/A|N/A|manifest | N/A |
+|N/A|N/A|N/A|N/A|mount | N/A |
+| Container|pause|N/A|N/A|pause| task pause |
+|N/A|N/A|N/A|N/A|play | N/A |
+|N/A|N/A|N/A|N/A|pod | N/A |
+| Container|port |port-forward |port-forward | port | N/A |
+| Container|ps |ps/pods |ps/pods | ps | c ls |
+| Image|pull |pull |pull | pull | pull |
+| Image|push |N/A |buildah push | push | push |
+| Container|rename |N/A |buildah rename | rename | N/A |
+| Container|restart |N/A |N/A | restart | N/A |
+| Container|rm |rm/rmp |rm/rmp | rm | rm |
+| Image|rmi |rmi |rmi | rmi | image rm |
+| Container|run |run/runp |run/runp | run | c run |
+| Image|save |N/A |buildah push --format oci localhost/myecho:1.0 oci-archieve:./oci-myecho.tar | save | N/A |
+| Image|search |N/A |N/A | search | N/A|
+|N/A|N/A|N/A|N/A|secret | N/A |
+| Container|start |start |start | start | task start  |
+| Container|stats |stats |stats | stats | N/A |
+| Container|stop |stop/stopp |stop/stopp | stop | N/A |
+|N/A|N/A|N/A|N/A|system | N/A |
+| Image|tag |N/A |buildah tag | tag | tag |
+| Container|top |N/A |N/A | top | N/A |
+|N/A|N/A|N/A|N/A|unmount | N/A |
+| Container|unpause |N/A |N/A | unpause | N/A |
+|N/A|N/A|N/A|N/A|unshare | N/A |
+| Container|update |update |update | E | N/A |
+| system|version |version |version | E | version |
+|N/A|N/A|N/A|N/A|volume | N/A |
+| Container|wait |N/A |N/A | wait | N/A |
 
 ## Container Tool Project
 https://github.com/containers

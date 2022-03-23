@@ -13,6 +13,11 @@ Linux Capabilities
 - [How to find the capabilites that running process required](#how-to-find-the-capabilites-that-running-process-required)
 - [How to find the capabilities that file execution required](#how-to-find-the-capabilities-that-file-execution-required)
 - [How to set capabilities](#how-to-set-capabilities)
+- [File Attributes](#file-attributes)
+  - [What is chattr and lsattr ?](#what-is-chattr-and-lsattr-)
+  - [Why to use chattr and lsattr ?](#why-to-use-chattr-and-lsattr-)
+- [File Time](#file-time)
+  - [How to find create time](#how-to-find-create-time)
 - [Run tcpdump w/ Non-root](#run-tcpdump-w-non-root)
 - [Refereces](#refereces)
 
@@ -292,6 +297,167 @@ root@eksa-2:/proc/3545255#
 setcap 'cap_net_bind_service=+ep' /path/to/program
 ```
 
+# File Attributes
+
+* a: append only
+* c: compressed
+* d: no dump
+* e: extent format
+* i: immutable
+* j: data journalling
+* s: secure deletion
+* t: no tail-merging
+* u: undeletable
+* A: no atime updates
+* C: no copy on write
+* D: synchronous directory updates
+* S: synchronous updates
+* T: top of directory hierarchy
+* h: huge file
+* E: compression error
+* I: indexed directory
+* X: compression raw access
+* Z: compressed dirty file
+
+## What is chattr and lsattr ?
+chattr corresponds to “change attribute” and used to change few file/filesystem attributes.
+lsattr corresponds to “list attribute” and used to list few file/filesystem attributes.
+
+```bash
+yum install e2fsprogs
+```
+
+## Why to use chattr and lsattr ?
+There are multiple attributes with a filesystem, and with files on a filesystem in Linux. Some of the attributes are controlled by chmod command which changes files’ permissions, some are controlled by tune2fs to modify filesystem attributes.
+
+And few of such attributes that control files behavior/access are handled by chattr and lsattr command.
+
+Sometimes we need to change these attributes and hence chattr/lsattr commands are required
+
+* To add the attribute we use “+”(addition sign) 
+* to remove the attribute we use “-“(minus sign).
+
+```bash
+[root@foss-ssc-6 ~]# lsattr /etc/gshadow
+-------------------- /etc/gshadow
+[root@foss-ssc-6 ~]# chattr +i /etc/gshadow
+[root@foss-ssc-6 ~]# lsattr /etc/gshadow
+----i--------------- /etc/gshadow
+[root@foss-ssc-6 ~]# groupadd def
+groupadd: cannot open /etc/gshadow
+[root@foss-ssc-6 ~]# 
+[root@foss-ssc-6 ~]# chattr -i /etc/gshadow
+[root@foss-ssc-6 ~]# groupadd def
+
+[root@foss-ssc-6 ~]# chattr +i abc
+[root@foss-ssc-6 ~]# rm -rf abc
+rm: cannot remove 'abc': Operation not permitted
+[root@foss-ssc-6 ~]# chattr -i abc
+[root@foss-ssc-6 ~]# rm -rf abc
+[root@foss-ssc-6 ~]# 
+
+
+```
+
+```bash
+[root@foss-ssc-6 ~]# stat abc
+  File: abc
+  Size: 4         	Blocks: 8          IO Block: 4096   regular file
+Device: fd00h/64768d	Inode: 59254618    Links: 1
+Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+Context: unconfined_u:object_r:admin_home_t:s0
+Access: 2022-03-13 18:14:37.132957885 +0800
+Modify: 2022-03-13 18:15:09.410243017 +0800
+Change: 2022-03-13 18:15:09.410243017 +0800
+ Birth: -
+[root@foss-ssc-6 ~]# 
+
+```
+
+# File Time
+
+
+* ctime: Shows file change time. Changes includes file content and mode
+* atime: Shows file access time, read time
+* mtime: Shows file modification time: Content changes
+* crtime: Shows file creation time.
+
+## How to find create time
+
+https://access.redhat.com/solutions/61571
+
+
+* The birth time or file creation time (crtime) is extension to the POSIX defined times mtime, atime and ctime. The file creation time (crtime) is not part of POSIX standard.
+* The XFS filesystem does not have this feature implemented and there is no plan to add it in the future.
+* The ext4 filesystem does record the creation- or birth-timestamp in the crtime field. This is implemented only on ext4 filesystem.
+* The ext2 and ext3 filesystems do not record the creation time so it is not possible with ext2 and ext3.
+* The stat command shows a "Birth" field, but it does not show the date stored in the crtime field.
+
+
+```
+    For XFS, there are no ways to see the crtime since it is not recorded.
+
+    For EXT4, to see the crtime, use the debugfs command (from the e2fsprogs package) as root; You must tell debugfs to run stat against the inode number of the file in question and give it the filesystem on which the file resides. For example:
+    Raw
+
+    # ls -i testfile
+    18 testfile
+    # debugfs -w -R "stat <18>" /dev/sdb1 | grep crtime
+    debugfs 1.42.9 (28-Dec-2013)
+    crtime: 0x5b63029c:2d3367a4 -- Thu Aug  2 09:09:48 2018
+
+    For EXT3 or EXT2, there are no ways to see the crtime since it is not recorded.
+
+```
+* Find inode
+  ```bash
+    [root@foss-ssc-6 ~]# stat createTime 
+    File: createTime
+    Size: 0         	Blocks: 0          IO Block: 4096   regular empty file
+    Device: fd00h/64768d	Inode: 59254616    Links: 1
+    Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
+    Context: unconfined_u:object_r:admin_home_t:s0
+    Access: 2022-03-13 18:31:15.197694757 +0800
+    Modify: 2022-03-13 18:31:15.197694757 +0800
+    Change: 2022-03-13 18:31:15.197694757 +0800
+    Birth: -
+
+   [root@foss-ssc-6 ~]# ls -li createTime 
+   59254616 -rw-r--r--. 1 root root 0 Mar 13 18:31 createTime
+
+  ```
+* Find file disk location
+  ```bash
+    [root@foss-ssc-6 ~]# df /root/createTime 
+    Filesystem          1K-blocks     Used Available Use% Mounted on
+    /dev/mapper/cl-root  52399104 27188280  25210824  52% /
+    [root@foss-ssc-6 ~]# 
+
+  ```
+* debugfs
+  The debugfs program is an interactive file system debugger. It can be used to examine and change the state of an **ext2, ext3, or ext4** file system.
+
+  XFS does not support creation time. It just has the regular atime, mtime and ctime. There are no plans that I've heard to support it
+
+  ```bash
+    debugfs -R 'stat <14420015>' /dev/sda10
+
+    Inode: 14420015   Type: regular    Mode:  0777   Flags: 0x80000
+    Generation: 2130000141    Version: 0x00000000:00000001
+    User:  1000   Group:  1000   Size: 260
+    File ACL: 0    Directory ACL: 0
+    Links: 1   Blockcount: 8
+    Fragment:  Address: 0    Number: 0    Size: 0
+    ctime: 0x579ed684:8fd54a34 -- Mon Aug  1 10:26:36 2016
+    atime: 0x58aea120:3ec8dc30 -- Thu Feb 23 14:15:20 2017
+    mtime: 0x5628ae91:38568be0 -- Thu Oct 22 15:08:25 2015
+    crtime: 0x579ed684:8fd54a34 -- Mon Aug  1 10:26:36 2016
+    Size of extra inode fields: 32
+    EXTENTS:
+    (0):57750808
+    (END)
+  ```
+
 # Run tcpdump w/ Non-root
 ```bash
 #!/usr/bin/env bash
@@ -308,6 +474,7 @@ sudo chgrp pcap /usr/sbin/tcpdump
 sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump
 sudo ln -s /usr/sbin/tcpdump /usr/bin/tcpdump
 ```
+
 
 # Refereces
 

@@ -1,10 +1,47 @@
-Scheduler related information
+Scheduling Preemption and Eviction
 ---
 
-# PriorityClass
+- [Kubernetes Scheduler](#kubernetes-scheduler)
+- [Assigning Pods to Nodes](#assigning-pods-to-nodes)
+  - [NodeSelector](#nodeselector)
+  - [Node isolation/restriction](#node-isolationrestriction)
+  - [Affinity and anti-affinity](#affinity-and-anti-affinity)
+    - [Node affinity](#node-affinity)
+    - [Node affinity per scheduling profile](#node-affinity-per-scheduling-profile)
+    - [Inter-pod affinity and anti-affinity](#inter-pod-affinity-and-anti-affinity)
+    - [Namespace selector](#namespace-selector)
+    - [nodeName](#nodename)
+- [Pod Overhead](#pod-overhead)
+- [Taints and Tolerations](#taints-and-tolerations)
+- [Scheduling Framework](#scheduling-framework)
+- [Scheduler Performance Tuning](#scheduler-performance-tuning)
+- [Resource Bin Packing for Extended Resources](#resource-bin-packing-for-extended-resources)
+- [Pod Disruption](#pod-disruption)
+  - [Pod Priority and Preemption](#pod-priority-and-preemption)
+  - [Node-pressure Eviction](#node-pressure-eviction)
+  - [API-initiated Eviction](#api-initiated-eviction)
+- [Pod Topology Spread Constraints](#pod-topology-spread-constraints)
 
-Pods can have priority. Priority indicates the importance of a Pod relative to other Pods. If a Pod cannot be scheduled, the scheduler tries to preempt (evict) lower priority Pods to make scheduling of the pending Pod possible.
+https://kubernetes.io/docs/concepts/scheduling-eviction/
 
-A PriorityClass is a non-namespaced object that defines a mapping from a priority class name to the integer value of the priority. The name is specified in the name field of the PriorityClass object's metadata. The value is specified in the required value field. The higher the value, the higher the priority. The name of a PriorityClass object must be a valid DNS subdomain name, and it cannot be prefixed with system-
 
-The globalDefault field indicates that the value of this PriorityClass should be used for Pods without a priorityClassName
+# Kubernetes Scheduler
+# Assigning Pods to Nodes
+## NodeSelector
+## Node isolation/restriction
+## Affinity and anti-affinity
+### Node affinity
+### Node affinity per scheduling profile
+### Inter-pod affinity and anti-affinity
+### Namespace selector
+### nodeName
+# Pod Overhead
+# Taints and Tolerations
+# Scheduling Framework
+# Scheduler Performance Tuning
+# Resource Bin Packing for Extended Resources
+# Pod Disruption
+## Pod Priority and Preemption
+## Node-pressure Eviction
+## API-initiated Eviction
+# Pod Topology Spread Constraints
