@@ -6,6 +6,7 @@ Kubernetes Networking
 - [Ingress and Controller](#ingress-and-controller)
 - [Egress](#egress)
 - [Network Policy](#network-policy)
+- [Equal Cost Multipath Route (ECMP)](#equal-cost-multipath-route-ecmp)
   
 # network namespace creation
 please make sure kernel version for netns default and all sysctl configuration which is inherit from init_net or using hardcoded default
@@ -300,3 +301,17 @@ Ingress may provide load balancing, SSL termination and name-based virtual hosti
 
 # Egress
 # Network Policy
+
+# Equal Cost Multipath Route (ECMP)
+
+```bash
+ip route add 172.16.0.0/24 \
+    nexthop via 10.0.1.1 dev ethX weight 1 \
+    nexthop via 10.0.2.1 dev ethY weight 1
+
+or 
+
+ip route add 172.16.0.0/24 nexthop via 10.0.1.1 dev ethX weight 1
+ip route append 172.16.0.0/24 nexthop via 10.0.2.1 dev ethY weight 1
+
+```
