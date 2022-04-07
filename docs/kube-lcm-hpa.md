@@ -948,8 +948,9 @@ spec:
 # Application Layer Autoscalling
 * Pod Level Self Control
 * Namespace Level Self Control 
+* Application Adaptor
   
-## Self Control
+## Pod Level Self Control
 * Pod needs Pod/Update permisstion 
 * WalkThroush
   * Target Pod: HTTPServer responds metric values
