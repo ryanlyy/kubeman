@@ -21,6 +21,13 @@ Kubernetes Scaling HPA
     - [pod metrics](#pod-metrics)
     - [object metrics](#object-metrics)
     - [Autoscaling on metrics not related to Kubernetes objects](#autoscaling-on-metrics-not-related-to-kubernetes-objects)
+- [Adapter](#adapter)
+  - [Prometheus Adaptor](#prometheus-adaptor)
+  - [Prometheus Adapter Integration into Kubernetes](#prometheus-adapter-integration-into-kubernetes)
+- [Application Layer Autoscalling](#application-layer-autoscalling)
+  - [Self Control](#self-control)
+  - [Namespace Level Self Control](#namespace-level-self-control)
+  - [Application Adaptor](#application-adaptor)
 - [References](#references)
 
 https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
@@ -414,7 +421,7 @@ space, &metricSpec.Object.DescribedObject, metricSelector)
                                                                 metrics, timestamp, err := c.metricsClient.GetExternalMetric(metricName, namespace, metricLabelSelector)
                                                                 ------
                                                                          metrics, err := c.client.NamespacedMetrics(namespace).List(metricName, selector)
-                                                                         
+
                                                  if metricSpec.External.Target.Value != nil {
                                                         replicaCountProposal, utilizationProposal, timestampProposal, err := a.replicaCalc.GetExternalMetricReplicas(specReplicas, metricSpec.External.Target.Value.MilliValue(), metricSpec.External.Metric.Name, hpa.Namespace, metricSpec.External.Metric.Selector, selector)
                                                         ------
@@ -869,9 +876,103 @@ These metrics describe **Pods**, and are averaged together across Pods and compa
 ### Autoscaling on metrics not related to Kubernetes objects
 Applications running on Kubernetes may need to autoscale based on metrics that don't have an obvious relationship to any object in the Kubernetes cluster, such as metrics describing a hosted service with no direct correlation to Kubernetes namespaces.
 
+# Adapter
+## Prometheus Adaptor
+* resource metrics (replace metrics-server)
+* custom metrics
+* external metrics
+
+## Prometheus Adapter Integration into Kubernetes
+* Create Adapter Service
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: custom-metrics-apiserver
+  namespace: custom-metrics
+spec:
+  ports:
+  - port: 443
+    targetPort: 6443
+  selector:
+    app: custom-metrics-apiserver #binding to apdaper deployment
+```
+* Create APIService
+```yaml
+apiVersion: apiregistration.k8s.io/v1beta1
+kind: APIService
+metadata:
+  name: v1beta1.custom.metrics.k8s.io
+spec:
+  service:
+    name: custom-metrics-apiserver
+    namespace: custom-metrics
+  group: custom.metrics.k8s.io
+  version: v1beta1
+  insecureSkipTLSVerify: true
+  groupPriorityMinimum: 100
+  versionPriority: 100
+---
+apiVersion: apiregistration.k8s.io/v1beta1
+kind: APIService
+metadata:
+  name: v1beta2.custom.metrics.k8s.io
+spec:
+  service:
+    name: custom-metrics-apiserver
+    namespace: custom-metrics
+  group: custom.metrics.k8s.io
+  version: v1beta2
+  insecureSkipTLSVerify: true
+  groupPriorityMinimum: 100
+  versionPriority: 200
+---
+apiVersion: apiregistration.k8s.io/v1beta1
+kind: APIService
+metadata:
+  name: v1beta1.external.metrics.k8s.io
+spec:
+  service:
+    name: custom-metrics-apiserver
+    namespace: custom-metrics
+  group: external.metrics.k8s.io
+  version: v1beta1
+  insecureSkipTLSVerify: true
+  groupPriorityMinimum: 100
+  versionPriority: 100
+---
+```
+
+![Kubernetes HPA with Prometheus](../pics/prometheus-hpa.JPG)
+
+# Application Layer Autoscalling
+* Pod Level Self Control
+* Namespace Level Self Control 
+  
+## Self Control
+* Pod needs Pod/Update permisstion 
+* WalkThroush
+  * Target Pod: HTTPServer responds metric values
+  * New Container: query metric value from target container with interval; when reach threshold, update replics+1
+
+## Namespace Level Self Control
+* Pod needs Pod/Update permission
+* WalkThroush
+  * Target Pod: HTTPServer responds metric values
+  * New Pod: query metrics from each pod when reach threshold for any pod, update replics+1
+
+## Application Adaptor
+* Create Adaptor used by kubernetes HPA controler
+* Adaptor match kubernetes framework
+* Apdator query target pod metrics
+* target pod: HTTPServer responds metric values
+  
 # References
 * https://towardsdatascience.com/kubernetes-hpa-with-custom-metrics-from-prometheus-9ffc201991e
 * https://www.ibm.com/docs/en/cloud-private/3.1.2?topic=tp-horizontal-pod-auto-scaling-by-using-custom-metrics
 * https://sysdig.com/blog/kubernetes-autoscaler/
 * https://faun.pub/writing-custom-metrics-exporter-for-kubernetes-hpa-8a2601a53386
 * https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+* https://aws.amazon.com/blogs/mt/automated-scaling-of-applications-running-on-eks-using-custom-metric-collected-by-amazon-prometheus-using-prometheus-adapter/
+* https://towardsdatascience.com/kubernetes-hpa-with-custom-metrics-from-prometheus-9ffc201991e
+* https://hackernoon.com/how-to-use-prometheus-adapter-to-autoscale-custom-metrics-deployments-p1p3tl0
