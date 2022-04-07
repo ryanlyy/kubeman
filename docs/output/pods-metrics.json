@@ -1,0 +1,24 @@
+{
+    "kind": "PodMetrics",
+    "apiVersion": "metrics.k8s.io/v1beta1",
+    "metadata": {
+      "name": "php-apache-7664864d67-kz5s6",
+      "namespace": "default",
+      "creationTimestamp": "2022-04-02T09:00:26Z",
+      "labels": {
+        "pod-template-hash": "7664864d67",
+        "run": "php-apache"
+      }
+    },
+    "timestamp": "2022-04-02T09:00:16Z",
+    "window": "11.732s",
+    "containers": [
+      {
+        "name": "php-apache",
+        "usage": {
+          "cpu": "51838n",
+          "memory": "18028Ki"
+        }
+      }
+    ]
+  }
