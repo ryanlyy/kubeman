@@ -25,7 +25,7 @@ Kubernetes Scaling HPA
   - [Prometheus Adaptor](#prometheus-adaptor)
   - [Prometheus Adapter Integration into Kubernetes](#prometheus-adapter-integration-into-kubernetes)
 - [Application Layer Autoscalling](#application-layer-autoscalling)
-  - [Self Control](#self-control)
+  - [Pod Level Self Control](#pod-level-self-control)
   - [Namespace Level Self Control](#namespace-level-self-control)
   - [Application Adaptor](#application-adaptor)
 - [References](#references)
@@ -944,6 +944,66 @@ spec:
 ```
 
 ![Kubernetes HPA with Prometheus](../pics/prometheus-hpa.JPG)
+![Prometheus integration with ServiceMonitor](../pics/prometheus-service-monitoring.JPG)
+
+https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/troubleshooting.md#troubleshooting-servicemonitor-changes
+
+
+
+```bash
+root@eksa-2:~/hpa/custom-metrics# kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/default/pods/*/http_requests?selector=app%3Dsample-app"
+{"kind":"MetricValueList","apiVersion":"custom.metrics.k8s.io/v1beta1","metadata":{"selfLink":"/apis/custom.metrics.k8s.io/v1beta1/namespaces/default/pods/%2A/http_requests"},"items":[{"describedObject":{"kind":"Pod","namespace":"default","name":"sample-app-84558dcdd-wshrz","apiVersion":"/v1"},"metricName":"http_requests","timestamp":"2022-04-11T08:04:23Z","value":"33m","selector":null}]}
+root@eksa-2:~/hpa/custom-metrics# 
+
+root@eksa-2:~/hpa/custom-metrics# kubectl get hpa
+NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/50%     1         10        1          9d
+sample-app   Deployment/sample-app   40m/500m   1         10        1          18h
+
+
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          53s
+sample-app-84558dcdd-wshrz                               1/1     Running   0          5h22m
+NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/50%      1         10        1          9d
+sample-app   Deployment/sample-app   596m/500m   1         10        2          18h
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          55s
+sample-app-84558dcdd-wshrz                               1/1     Running   0          5h22m
+NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/50%      1         10        1          9d
+sample-app   Deployment/sample-app   596m/500m   1         10        2          18h
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          56s
+sample-app-84558dcdd-wshrz                               1/1     Running   0          5h22m
+NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/50%      1         10        1          9d
+sample-app   Deployment/sample-app   596m/500m   1         10        2          18h
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          57s
+sample-app-84558dcdd-wshrz                               1/1     Running   0          5h22m
+NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/50%      1         10        1          9d
+sample-app   Deployment/sample-app   596m/500m   1         10        2          18h
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          59s
+sample-app-84558dcdd-wshrz                               1/1     Running   0          5h22m
+NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/50%      1         10        1          9d
+sample-app   Deployment/sample-app   311m/500m   1         10        2          18h
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          60s
+sample-app-84558dcdd-wshrz                               1/1     Running   0          5h22m
+NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/50%      1         10        1          9d
+sample-app   Deployment/sample-app   311m/500m   1         10        2          18h
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          61s
+sample-app-84558dcdd-wshrz                               1/1     Running   0          5h22m
+NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/50%      1         10        1          9d
+sample-app   Deployment/sample-app   311m/500m   1         10        2          18h
+
+.....
+
+### Workt Items
+* Create ServiceMonitor (namespaced based) w/ label configured same with Prometheus serviceMonitorSelector -- .yaml
+* Create Prometheus Server to responds http://<svc.default.cluser.local>:port/metrics
+
+```
 
 # Application Layer Autoscalling
 * Pod Level Self Control
