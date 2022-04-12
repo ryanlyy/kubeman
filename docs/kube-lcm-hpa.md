@@ -3,7 +3,6 @@ Kubernetes Scaling HPA
 
 - [Overview](#overview)
 - [How HPA works](#how-hpa-works)
-  - [Code through](#code-through)
 - [HPA API](#hpa-api)
 - [Scaling on  metrics](#scaling-on--metrics)
   - [Resource metrics (metrics.k8s.io) provided by metrics-server](#resource-metrics-metricsk8sio-provided-by-metrics-server)
@@ -23,6 +22,7 @@ Kubernetes Scaling HPA
   - [Prometheus Adapter Integration into Kubernetes](#prometheus-adapter-integration-into-kubernetes)
     - [CaaS](#caas)
     - [Workt Items](#workt-items)
+- [Code through](#code-through)
 - [References](#references)
 
 https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
@@ -55,7 +55,514 @@ Once during each period, the controller manager:
 
 HPA is namespaced
 
-## Code through
+# HPA API
+
+* V1: Only support CPU Utilization
+  ```
+  targetCPUUtilizationPercentage (int32)
+    target average CPU utilization (represented as a percentage of requested CPU) over all the pods; if not specified the default autoscaling policy will be used
+  ```
+  https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/horizontal-pod-autoscaler-v1/
+
+* V2
+  * scaleTargetRef (CrossVersionObjectReference)
+    * kind (Deployment|Statefulset)
+    * name (workload name in this namespace on that kind)
+    * apiVersion(kind API Version)
+  * behavior (HorizontalPodAutoscalerBehavior)
+    * scaleUp
+    * scaleDown
+  * metrics: metrics contains the specifications for which to use to calculate the desired replica count (the maximum replica count across all metrics will be used). The desired replica count is calculated multiplying the ratio between the target value and the current value by the current number of pods
+    * type (metrics source): ContainerResource|External|Object|Pods|Resource
+
+      * resource (ResourceMetricSource) -- per pod
+        * name(string): name of resource in questions
+          * cpu
+          * memory
+        * target(MetricTarget)
+          * type (string): Utilization|Value|AverageValue
+          * averageUtilization (only valid for Resource metric source type(i.e: cpu/memory))
+          * averageValue
+          * value
+
+      * containerResource(**ContainerResourceMetricSource**) 
+        * container(string): container name of scaling target
+        * name(string): the name of the resource in question
+          * cpu
+          * memory
+        * target(MetricTarget): target Values of the given metrics
+          * type: Utilization|Value|Average
+          * averageUtilization (only valid for Resource metric source type(i.e: cpu/memory))
+          * averageValue
+          * value
+        NOTE: per container feature-gate **HPAContainerMetrics** must be enabled and **v1.20 is alpha**
+
+      * pods (PodsMetricSource)
+        * metric
+          * name(string): namve of given metric
+          * selector(LabelSelecotor)
+        * target(MetricTarget): target Values of the given metrics
+          * type: Utilization|Value|Average
+          * averageUtilization (only valid for Resource metric source type(i.e: cpu/memory))
+          * averageValue
+          * value
+
+      * object (ObjectMetricSource)
+        * describedOject (CrossVersionObjectReference)
+          * kind
+          * name
+          * apiVersion
+        * metric
+          * name(string): namve of given metric
+          * selector(LabelSelecotor)
+        * target(MetricTarget): target Values of the given metrics
+          * type: Utilization|Value|Average
+          * averageUtilization (only valid for Resource metric source type(i.e: cpu/memory))
+          * averageValue
+          * value
+
+      * external (**ExternalMetricSource**)
+        * metric
+          * name(string): namve of given metric
+          * selector(LabelSelecotor)
+        * target(MetricTarget): target Values of the given metrics
+          * type: Utilization|Value|Average
+          * averageUtilization (only valid for Resource metric source type(i.e: cpu/memory))
+          * averageValue
+          * value
+
+NOTE: selector is the string-encoded form of a standard kubernetes label selector for the given metric When set, it is passed as an additional parameter to the **metrics server** for more specific metrics scoping. When unset, just the metricName will be used to gather metrics.
+
+
+# Scaling on  metrics
+FEATURE STATE: Kubernetes v1.23 [stable] 
+
+Provided that you use the **autoscaling/v2** API version, you can configure a HorizontalPodAutoscaler to scale based on a custom metric (that is not built in to Kubernetes or any Kubernetes component). The HorizontalPodAutoscaler controller then queries for these **custom metrics** from the Kubernetes API.
+
+API:
+* For **resource metrics**, this is the **metrics.k8s.io** API, generally provided by **metrics-server**. It can be launched as a cluster add-on
+* For **custom metrics**, this is the **custom.metrics.k8s.io** API. It's provided by **"adapter" API servers** provided by metrics solution vendors. Check with your metrics pipeline to see if there is a **Kubernetes metrics adapter** available
+* For **external metrics**, this is the **external.metrics.k8s.io** API. It may be provided by the **custom metrics adapters** provided above
+
+## Resource metrics (metrics.k8s.io) provided by metrics-server
+* cpu
+* memory
+  
+## Customer Metrics (custom.metrics.k8s.io) provided by metrics solution vendor
+proposes an API that the Horizontal Pod Autoscaler can use to access **arbitrary metrics**;  the new API should be structured around accessing metrics by referring to **Kubernetes objects** (or groups thereof) and a metric name
+
+* Root API: **/apis/custom-metrics/v1alpha1**
+* **/{object-type}/{object-name}/{metric-name...}**: retrieve the given metric for the given non-namespaced object (e.g. Node, PersistentVolume)
+* **/{object-type}/*/{metric-name...}**: retrieve the given metric for all non-namespaced objects of the given type
+* **/{object-type}/*/{metric-name...}?labelSelector=foo**: retrieve the given metric for all non-namespaced objects of the given type matching the given label selector
+  
+* **/namespaces/{namespace-name}/{object-type}/{object-name}/{metric-name...}**: retrieve the given metric for the given namespaced object
+  * /namespaces/mynamespace/pods/*/METRIC_NAME?labelSelector=foo
+  * /namespaces/mynamespace/$RESOURCE.$GROUP/$OBJECT_NAME/$METRIC_NAME
+* **/namespaces/{namespace-name}/{object-type}/*/{metric-name...}**: retrieve the given metric for all namespaced objects of the given type
+* **/namespaces/{namespace-name}/{object-type}/*/{metric-name...}?labelSelector=foo**: retrieve the given metric for all namespaced objects of the given type matching the given label selector
+* **/namespaces/{namespace-name}/metrics/{metric-name}**: retrieve the given metric which describes the given namespace.
+
+
+## External metreics (external.metrics.k8s.io) provided by custom metrics adpator
+HPA v2 API extension proposal introduces new External metric type for autoscaling based on metrics coming from outside of Kubernetes cluster
+
+* /apis/external.metrics.k8s.io/v1beta1/namespaces/<namespace_name>/<metric_name>?labelSelector=<selector>
+
+external refers to a global metric that is not associated with any Kubernetes object. It allows autoscaling based on information coming from components running outside of cluster (for example length of queue in cloud messaging service, or QPS from loadbalancer running outside of cluster).
+
+ExternalMetricSource indicates how to scale on a metric not associated with any Kubernetes object (for example length of queue in cloud messaging service, or QPS from loadbalancer running outside of cluster).
+
+# Kubernetes Monitor Architecture
+## Core Metrics Pipeline
+consisting of **Kubelet/cAdvisor**, a **resource estimator**, a slimmed-down Heapster called **metrics-server**, and the **API server** serving the master metrics API.
+
+These metrics are used by **core system components**, such as **scheduling logic** (e.g. **scheduler** and **horizontal pod autoscaling** based on system metrics) and simple out-of-the-box UI components (e.g. **kubectl top**). 
+
+## Metrics-server
+
+* CPU/Memory(only cpu/memory) based horizontal autoscaling (learn more about [Horizontal Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/))
+* Automatically adjusting/suggesting resources needed by containers (learn more about [Vertical Autoscaling](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler/))
+
+### Extenstion APIserver - Register APIService objects
+```yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    k8s-app: metrics-server
+  name: metrics-server
+  namespace: kube-system
+spec:
+  ports:
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: https
+  selector:
+    k8s-app: metrics-server
+--
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  labels:
+    k8s-app: metrics-server
+  name: v1beta1.metrics.k8s.io
+spec:
+  group: metrics.k8s.io
+  groupPriorityMinimum: 100
+  insecureSkipTLSVerify: true
+  service:
+    name: metrics-server
+    namespace: kube-system
+  version: v1beta1
+  versionPriority: 100
+```
+
+## Monitoring Pipeline
+A monitoring pipeline used for collecting various metrics from the system and exposing them to **end-users**, as well as to the **Horizontal Pod Autoscaler** (for custom metrics) and Infrastore via **adapters**. 
+
+Users can choose from many **monitoring system vendors**, or run none at all. 
+
+In open-source, Kubernetes will not ship with a **monitoring pipeline**, but third-party options will be easy to install. 
+* a per-node agent
+* a cluster-level aggregator.
+
+![Custom Metrics Architecture](../pics/CustomMetrics.JPG)
+
+Data collected by the monitoring pipeline may contain any sub- or superset of the following groups of metrics:
+* core system metrics
+* non-core system metrics
+* service metrics from user application containers
+* service metrics from Kubernetes infrastructure containers; these metrics are exposed using Prometheus instrumentation
+
+monitoring pipeline would  have to create a stateless **API adapter** that **pulls** the custom metrics from the monitoring pipeline and **exposes** them to the Horizontal Pod Autoscaler
+* cAdvisor + Heapster + InfluxDB (or any other sink)
+* cAdvisor + collectd + Heapster
+* **cAdvisor + Prometheus**
+* snapd + Heapster
+* snapd + SNAP cluster-level agent
+* Sysdig
+
+### cAdvisor + Prometheus
+
+* core and non-core system metrics from cAdvisor
+* **service metrics exposed by containers** via HTTP handler in Prometheus format
+* [optional] metrics about node itself from Node Exporter (a Prometheus component)
+
+# HPA Walkthrough
+## Autoscaling on resource metrics (CPU)
+* metrics-server 
+  installed using https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml w/ updated parameter "- --kubelet-insecure-tls"
+
+```
+E0402 01:50:02.220719       1 scraper.go:140] "Failed to scrape node" err="Get \"https://10.67.26.198:10250/metrics/resource\": x509: cannot validate certificate for 10.67.26.198 because it doesn't contain any IP SANs" node="eksa-2"
+I0402 01:50:08.446220       1 server.go:187] "Failed probe" probe="metric-storage-ready" err="no metrics to serve"
+```
+
+Both Pod and Container Resource metrics can be used by Resource based HPA
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: php-apache
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: php-apache
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+```
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: php-apache
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: php-apache
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: ContainerResource
+    containerResource:
+      container: php-apache
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+
+```
+```bash
+root@eksa-2:~/hpa# kubectl get hpa php-apache --watch
+NAME         REFERENCE               TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/50%    1         10        1          4m25s
+php-apache   Deployment/php-apache   65%/50%   1         10        1          5m1s
+php-apache   Deployment/php-apache   250%/50%   1         10        2          5m16s
+php-apache   Deployment/php-apache   156%/50%   1         10        4          5m31s
+php-apache   Deployment/php-apache   120%/50%   1         10        5          5m46s
+php-apache   Deployment/php-apache   57%/50%    1         10        5          6m1s
+php-apache   Deployment/php-apache   55%/50%    1         10        5          6m16s
+php-apache   Deployment/php-apache   59%/50%    1         10        5          6m31s
+php-apache   Deployment/php-apache   62%/50%    1         10        6          6m46s
+php-apache   Deployment/php-apache   53%/50%    1         10        6          7m1s
+php-apache   Deployment/php-apache   48%/50%    1         10        6          7m16s
+```
+**Autoscaling the replicas may take a few minutes (around 5minutes)**
+https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/horizontal-pod-autoscaler-v2/
+https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough
+
+# Autoscaling on custom-metrics
+## Nokia Blueprint
+
+Prometheus and Prometheus Adapter will be used as custom-metrics framework.
+![Nokia custom-metrics support architecture of NCS ](../pics/nokia-hpa-custom-metrics.JPG)
+
+**Note: HPA based mechanism does not work for micro services that use fixed IPs only support service based micro services**
+
+## Prometheus Adaptor
+* resource metrics (replace metrics-server)
+* custom metrics
+* external metrics
+
+## Prometheus Adapter Integration into Kubernetes
+* Create Adapter Service
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: custom-metrics-apiserver
+  namespace: custom-metrics
+spec:
+  ports:
+  - port: 443
+    targetPort: 6443
+  selector:
+    app: custom-metrics-apiserver #binding to apdaper deployment
+```
+* Create APIService
+```yaml
+apiVersion: apiregistration.k8s.io/v1beta1
+kind: APIService
+metadata:
+  name: v1beta1.custom.metrics.k8s.io
+spec:
+  service:
+    name: custom-metrics-apiserver
+    namespace: custom-metrics
+  group: custom.metrics.k8s.io
+  version: v1beta1
+  insecureSkipTLSVerify: true
+  groupPriorityMinimum: 100
+  versionPriority: 100
+---
+apiVersion: apiregistration.k8s.io/v1beta1
+kind: APIService
+metadata:
+  name: v1beta2.custom.metrics.k8s.io
+spec:
+  service:
+    name: custom-metrics-apiserver
+    namespace: custom-metrics
+  group: custom.metrics.k8s.io
+  version: v1beta2
+  insecureSkipTLSVerify: true
+  groupPriorityMinimum: 100
+  versionPriority: 200
+---
+apiVersion: apiregistration.k8s.io/v1beta1
+kind: APIService
+metadata:
+  name: v1beta1.external.metrics.k8s.io
+spec:
+  service:
+    name: custom-metrics-apiserver
+    namespace: custom-metrics
+  group: external.metrics.k8s.io
+  version: v1beta1
+  insecureSkipTLSVerify: true
+  groupPriorityMinimum: 100
+  versionPriority: 100
+---
+```
+
+![Kubernetes HPA with Prometheus](../pics/prometheus-hpa.JPG)
+
+
+https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/troubleshooting.md#troubleshooting-servicemonitor-changes
+
+
+### CaaS
+* Install Prometheus
+* Install prometheus-adapter w/ custom-metrics support
+
+```
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack
+helm install [RELEASE_NAME] prometheus-community/prometheus-adapter
+
+NOTE: make sure prometheus-url configred in prometheus-adapter
+For example:
+--prometheus-url=http://prometheus-kube-prometheus-prometheus.default.svc.cluster.local:9090
+
+root@eksa-2:~# helm list
+NAME              	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART                       	APP VERSION
+prometheus        	default  	1       	2022-04-11 04:51:14.907809968 +0000 UTC	deployed	kube-prometheus-stack-34.9.0	0.55.0     
+prometheus-adapter	default  	1       	2022-04-11 04:55:10.202758794 +0000 UTC	deployed	prometheus-adapter-3.2.0    	v0.9.1 
+```
+
+### Workt Items
+* Create ServiceMonitor (namespaced based) w/ label configured same with Prometheus serviceMonitorSelector -- .yaml
+* Create HPA (Resource + custom_metrics) - Configurable: autoscalling.enable|autoscalling.resource.enable|autoscalling.custom_metrics.enable
+* Create Prometheus Server to responds http://<svc.default.cluser.local>:port/metrics
+
+Following the following walkthrough to deploy test deployment
+https://github.com/kubernetes-sigs/prometheus-adapter/blob/v0.9.1/docs/walkthrough.md
+
+Read carefully the following pic, make sure your ServiceMonitor Label is line up with serviceMonitorSelector of Prometheus CR
+![Prometheus integration with ServiceMonitor](../pics/prometheus-service-monitoring.JPG)
+```yaml
+root@eksa-2:~/hpa/helm-charts-main/charts# kubectl get prometheus prometheus-kube-prometheus-prometheus -o yaml
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  annotations:
+    meta.helm.sh/release-name: prometheus
+    meta.helm.sh/release-namespace: default
+  creationTimestamp: "2022-04-11T04:52:22Z"
+  generation: 2
+  labels:
+    app: kube-prometheus-stack-prometheus
+    app.kubernetes.io/instance: prometheus
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: kube-prometheus-stack
+    app.kubernetes.io/version: 34.9.0
+    chart: kube-prometheus-stack-34.9.0
+    heritage: Helm
+    release: prometheus
+  name: prometheus-kube-prometheus-prometheus
+  namespace: default
+  resourceVersion: "15406656"
+  uid: 097d36b6-64b1-4af5-a704-0a33b8b54ac8
+spec:
+  alerting:
+    alertmanagers:
+    - apiVersion: v2
+      name: prometheus-kube-prometheus-alertmanager
+      namespace: default
+      pathPrefix: /
+      port: http-web
+  enableAdminAPI: false
+  externalUrl: http://prometheus-kube-prometheus-prometheus.default:9090
+  image: quay.io/prometheus/prometheus:v2.34.0
+  listenLocal: false
+  logFormat: logfmt
+  logLevel: info
+  paused: false
+  podMonitorNamespaceSelector: {}
+  podMonitorSelector:
+    matchLabels:
+      release: prometheus
+  portName: http-web
+  probeNamespaceSelector: {}
+  probeSelector:
+    matchLabels:
+      release: prometheus
+  replicas: 1
+  retention: 10d
+  routePrefix: /
+  ruleNamespaceSelector: {}
+  ruleSelector:
+    matchLabels:
+      release: prometheus
+  securityContext:
+    fsGroup: 2000
+    runAsGroup: 2000
+    runAsNonRoot: true
+    runAsUser: 1000
+  serviceAccountName: prometheus-kube-prometheus-prometheus
+  serviceMonitorNamespaceSelector: {}
+  serviceMonitorSelector:  #RYAN: NOTE HERE TO MAKE SURE your ServiceMonitor Label line up the here
+    matchExpressions:
+    - key: app
+      operator: Exists
+    matchLabels:
+      release: prometheus
+  shards: 1
+  version: v2.34.0
+```
+```bash
+root@eksa-2:~/hpa/custom-metrics# kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/default/pods/*/http_requests?selector=app%3Dsample-app"
+{"kind":"MetricValueList","apiVersion":"custom.metrics.k8s.io/v1beta1","metadata":{"selfLink":"/apis/custom.metrics.k8s.io/v1beta1/namespaces/default/pods/%2A/http_requests"},"items":[{"describedObject":{"kind":"Pod","namespace":"default","name":"sample-app-84558dcdd-wshrz","apiVersion":"/v1"},"metricName":"http_requests","timestamp":"2022-04-11T08:04:23Z","value":"33m","selector":null}]}
+root@eksa-2:~/hpa/custom-metrics# 
+
+root@eksa-2:~/hpa/custom-metrics# kubectl get hpa
+NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
+sample-app   Deployment/sample-app   40m/500m   1         10        1          18h
+
+NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+sample-app   Deployment/sample-app   596m/500m   1         10        2          18h
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          55s
+sample-app-84558dcdd-wshrz                               1/1     Running   0          5h22m
+NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+sample-app   Deployment/sample-app   596m/500m   1         10        2          18h
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          56s
+sample-app-84558dcdd-wshrz                               1/1     Running   0          5h22m
+NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+sample-app   Deployment/sample-app   596m/500m   1         10        2          18h
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          57s
+sample-app-84558dcdd-wshrz                               1/1     Running   0          5h22m
+.....
+sample-app   Deployment/sample-app   418m/500m   1         10        3          19h
+sample-app-84558dcdd-jmrct                               1/1     Running   0          67m
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          77m
+sample-app-84558dcdd-wshrz                               1/1     Running   0          6h39m
+NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+sample-app   Deployment/sample-app   418m/500m   1         10        3          19h
+sample-app-84558dcdd-jmrct                               1/1     Running   0          67m
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          77m
+sample-app-84558dcdd-wshrz                               1/1     Running   0          6h39m
+NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+sample-app   Deployment/sample-app   418m/500m   1         10        3          19h
+sample-app-84558dcdd-jmrct                               1/1     Running   0          67m
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          77m
+sample-app-84558dcdd-wshrz                               1/1     Running   0          6h39m
+NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
+sample-app   Deployment/sample-app   418m/500m   1         10        3          19h
+sample-app-84558dcdd-jmrct                               1/1     Running   0          67m
+sample-app-84558dcdd-qp5g2                               1/1     Running   0          77m
+sample-app-84558dcdd-wshrz                               1/1     Running   0          6h39m
+.....
+sample-app-84558dcdd-wshrz                               1/1     Running   0          6h53m
+NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
+sample-app   Deployment/sample-app   33m/500m   1         10        1          20h
+sample-app-84558dcdd-wshrz                               1/1     Running   0          6h53m
+NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
+sample-app   Deployment/sample-app   33m/500m   1         10        1          20h
+sample-app-84558dcdd-wshrz                               1/1     Running   0          6h53m
+NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
+sample-app   Deployment/sample-app   33m/500m   1         10        1          20h
+sample-app-84558dcdd-wshrz                               1/1     Running   0          6h53m
+NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
+sample-app   Deployment/sample-app   33m/500m   1         10        1          20h
+```
+
+# Code through
 ```golang
 (a *HorizontalController) worker //RYAN: loop forever to handle all HPA
   a.processNextWorkItem(ctx)
@@ -570,515 +1077,6 @@ func startHPAController(ctx context.Context, controllerContext ControllerContext
 }
 
 ```
-
-# HPA API
-
-* V1: Only support CPU Utilization
-  ```
-  targetCPUUtilizationPercentage (int32)
-    target average CPU utilization (represented as a percentage of requested CPU) over all the pods; if not specified the default autoscaling policy will be used
-  ```
-  https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/horizontal-pod-autoscaler-v1/
-
-* V2
-  * scaleTargetRef (CrossVersionObjectReference)
-    * kind (Deployment|Statefulset)
-    * name (workload name in this namespace on that kind)
-    * apiVersion(kind API Version)
-  * behavior (HorizontalPodAutoscalerBehavior)
-    * scaleUp
-    * scaleDown
-  * metrics: metrics contains the specifications for which to use to calculate the desired replica count (the maximum replica count across all metrics will be used). The desired replica count is calculated multiplying the ratio between the target value and the current value by the current number of pods
-    * type (metrics source): ContainerResource|External|Object|Pods|Resource
-
-      * resource (ResourceMetricSource) -- per pod
-        * name(string): name of resource in questions
-          * cpu
-          * memory
-        * target(MetricTarget)
-          * type (string): Utilization|Value|AverageValue
-          * averageUtilization (only valid for Resource metric source type(i.e: cpu/memory))
-          * averageValue
-          * value
-
-      * containerResource(**ContainerResourceMetricSource**) 
-        * container(string): container name of scaling target
-        * name(string): the name of the resource in question
-          * cpu
-          * memory
-        * target(MetricTarget): target Values of the given metrics
-          * type: Utilization|Value|Average
-          * averageUtilization (only valid for Resource metric source type(i.e: cpu/memory))
-          * averageValue
-          * value
-        NOTE: per container feature-gate **HPAContainerMetrics** must be enabled and **v1.20 is alpha**
-
-      * pods (PodsMetricSource)
-        * metric
-          * name(string): namve of given metric
-          * selector(LabelSelecotor)
-        * target(MetricTarget): target Values of the given metrics
-          * type: Utilization|Value|Average
-          * averageUtilization (only valid for Resource metric source type(i.e: cpu/memory))
-          * averageValue
-          * value
-
-      * object (ObjectMetricSource)
-        * describedOject (CrossVersionObjectReference)
-          * kind
-          * name
-          * apiVersion
-        * metric
-          * name(string): namve of given metric
-          * selector(LabelSelecotor)
-        * target(MetricTarget): target Values of the given metrics
-          * type: Utilization|Value|Average
-          * averageUtilization (only valid for Resource metric source type(i.e: cpu/memory))
-          * averageValue
-          * value
-
-      * external (**ExternalMetricSource**)
-        * metric
-          * name(string): namve of given metric
-          * selector(LabelSelecotor)
-        * target(MetricTarget): target Values of the given metrics
-          * type: Utilization|Value|Average
-          * averageUtilization (only valid for Resource metric source type(i.e: cpu/memory))
-          * averageValue
-          * value
-
-NOTE: selector is the string-encoded form of a standard kubernetes label selector for the given metric When set, it is passed as an additional parameter to the **metrics server** for more specific metrics scoping. When unset, just the metricName will be used to gather metrics.
-
-
-# Scaling on  metrics
-FEATURE STATE: Kubernetes v1.23 [stable] 
-
-Provided that you use the **autoscaling/v2** API version, you can configure a HorizontalPodAutoscaler to scale based on a custom metric (that is not built in to Kubernetes or any Kubernetes component). The HorizontalPodAutoscaler controller then queries for these **custom metrics** from the Kubernetes API.
-
-API:
-* For **resource metrics**, this is the **metrics.k8s.io** API, generally provided by **metrics-server**. It can be launched as a cluster add-on
-* For **custom metrics**, this is the **custom.metrics.k8s.io** API. It's provided by **"adapter" API servers** provided by metrics solution vendors. Check with your metrics pipeline to see if there is a **Kubernetes metrics adapter** available
-* For **external metrics**, this is the **external.metrics.k8s.io** API. It may be provided by the **custom metrics adapters** provided above
-
-## Resource metrics (metrics.k8s.io) provided by metrics-server
-* cpu
-* memory
-  
-## Customer Metrics (custom.metrics.k8s.io) provided by metrics solution vendor
-proposes an API that the Horizontal Pod Autoscaler can use to access **arbitrary metrics**;  the new API should be structured around accessing metrics by referring to **Kubernetes objects** (or groups thereof) and a metric name
-
-* Root API: **/apis/custom-metrics/v1alpha1**
-* **/{object-type}/{object-name}/{metric-name...}**: retrieve the given metric for the given non-namespaced object (e.g. Node, PersistentVolume)
-* **/{object-type}/*/{metric-name...}**: retrieve the given metric for all non-namespaced objects of the given type
-* **/{object-type}/*/{metric-name...}?labelSelector=foo**: retrieve the given metric for all non-namespaced objects of the given type matching the given label selector
-  
-* **/namespaces/{namespace-name}/{object-type}/{object-name}/{metric-name...}**: retrieve the given metric for the given namespaced object
-  * /namespaces/mynamespace/pods/*/METRIC_NAME?labelSelector=foo
-  * /namespaces/mynamespace/$RESOURCE.$GROUP/$OBJECT_NAME/$METRIC_NAME
-* **/namespaces/{namespace-name}/{object-type}/*/{metric-name...}**: retrieve the given metric for all namespaced objects of the given type
-* **/namespaces/{namespace-name}/{object-type}/*/{metric-name...}?labelSelector=foo**: retrieve the given metric for all namespaced objects of the given type matching the given label selector
-* **/namespaces/{namespace-name}/metrics/{metric-name}**: retrieve the given metric which describes the given namespace.
-
-
-## External metreics (external.metrics.k8s.io) provided by custom metrics adpator
-HPA v2 API extension proposal introduces new External metric type for autoscaling based on metrics coming from outside of Kubernetes cluster
-
-* /apis/external.metrics.k8s.io/v1beta1/namespaces/<namespace_name>/<metric_name>?labelSelector=<selector>
-
-external refers to a global metric that is not associated with any Kubernetes object. It allows autoscaling based on information coming from components running outside of cluster (for example length of queue in cloud messaging service, or QPS from loadbalancer running outside of cluster).
-
-ExternalMetricSource indicates how to scale on a metric not associated with any Kubernetes object (for example length of queue in cloud messaging service, or QPS from loadbalancer running outside of cluster).
-
-# Kubernetes Monitor Architecture
-## Core Metrics Pipeline
-consisting of **Kubelet/cAdvisor**, a **resource estimator**, a slimmed-down Heapster called **metrics-server**, and the **API server** serving the master metrics API.
-
-These metrics are used by **core system components**, such as **scheduling logic** (e.g. **scheduler** and **horizontal pod autoscaling** based on system metrics) and simple out-of-the-box UI components (e.g. **kubectl top**). 
-
-## Metrics-server
-
-* CPU/Memory(only cpu/memory) based horizontal autoscaling (learn more about [Horizontal Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/))
-* Automatically adjusting/suggesting resources needed by containers (learn more about [Vertical Autoscaling](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler/))
-
-### Extenstion APIserver - Register APIService objects
-```yaml
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    k8s-app: metrics-server
-  name: metrics-server
-  namespace: kube-system
-spec:
-  ports:
-  - name: https
-    port: 443
-    protocol: TCP
-    targetPort: https
-  selector:
-    k8s-app: metrics-server
---
-apiVersion: apiregistration.k8s.io/v1
-kind: APIService
-metadata:
-  labels:
-    k8s-app: metrics-server
-  name: v1beta1.metrics.k8s.io
-spec:
-  group: metrics.k8s.io
-  groupPriorityMinimum: 100
-  insecureSkipTLSVerify: true
-  service:
-    name: metrics-server
-    namespace: kube-system
-  version: v1beta1
-  versionPriority: 100
-```
-
-## Monitoring Pipeline
-A monitoring pipeline used for collecting various metrics from the system and exposing them to **end-users**, as well as to the **Horizontal Pod Autoscaler** (for custom metrics) and Infrastore via **adapters**. 
-
-Users can choose from many **monitoring system vendors**, or run none at all. 
-
-In open-source, Kubernetes will not ship with a **monitoring pipeline**, but third-party options will be easy to install. 
-* a per-node agent
-* a cluster-level aggregator.
-
-![Custom Metrics Architecture](../pics/CustomMetrics.JPG)
-
-Data collected by the monitoring pipeline may contain any sub- or superset of the following groups of metrics:
-* core system metrics
-* non-core system metrics
-* service metrics from user application containers
-* service metrics from Kubernetes infrastructure containers; these metrics are exposed using Prometheus instrumentation
-
-monitoring pipeline would  have to create a stateless **API adapter** that **pulls** the custom metrics from the monitoring pipeline and **exposes** them to the Horizontal Pod Autoscaler
-* cAdvisor + Heapster + InfluxDB (or any other sink)
-* cAdvisor + collectd + Heapster
-* **cAdvisor + Prometheus**
-* snapd + Heapster
-* snapd + SNAP cluster-level agent
-* Sysdig
-
-### cAdvisor + Prometheus
-
-* core and non-core system metrics from cAdvisor
-* **service metrics exposed by containers** via HTTP handler in Prometheus format
-* [optional] metrics about node itself from Node Exporter (a Prometheus component)
-
-# HPA Walkthrough
-## Autoscaling on resource metrics (CPU)
-* metrics-server 
-  installed using https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml w/ updated parameter "- --kubelet-insecure-tls"
-
-```
-E0402 01:50:02.220719       1 scraper.go:140] "Failed to scrape node" err="Get \"https://10.67.26.198:10250/metrics/resource\": x509: cannot validate certificate for 10.67.26.198 because it doesn't contain any IP SANs" node="eksa-2"
-I0402 01:50:08.446220       1 server.go:187] "Failed probe" probe="metric-storage-ready" err="no metrics to serve"
-```
-
-Both Pod and Container Resource metrics can be used by Resource based HPA
-```yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: php-apache
-  namespace: default
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: php-apache
-  minReplicas: 1
-  maxReplicas: 10
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 50
-```
-
-```yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: php-apache
-  namespace: default
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: php-apache
-  minReplicas: 1
-  maxReplicas: 10
-  metrics:
-  - type: ContainerResource
-    containerResource:
-      container: php-apache
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 50
-
-```
-```bash
-root@eksa-2:~/hpa# kubectl get hpa php-apache --watch
-NAME         REFERENCE               TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-php-apache   Deployment/php-apache   0%/50%    1         10        1          4m25s
-php-apache   Deployment/php-apache   65%/50%   1         10        1          5m1s
-php-apache   Deployment/php-apache   250%/50%   1         10        2          5m16s
-php-apache   Deployment/php-apache   156%/50%   1         10        4          5m31s
-php-apache   Deployment/php-apache   120%/50%   1         10        5          5m46s
-php-apache   Deployment/php-apache   57%/50%    1         10        5          6m1s
-php-apache   Deployment/php-apache   55%/50%    1         10        5          6m16s
-php-apache   Deployment/php-apache   59%/50%    1         10        5          6m31s
-php-apache   Deployment/php-apache   62%/50%    1         10        6          6m46s
-php-apache   Deployment/php-apache   53%/50%    1         10        6          7m1s
-php-apache   Deployment/php-apache   48%/50%    1         10        6          7m16s
-```
-**Autoscaling the replicas may take a few minutes (around 5minutes)**
-https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/horizontal-pod-autoscaler-v2/
-https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough
-
-# Autoscaling on custom-metrics
-## Nokia Blueprint
-
-Prometheus and Prometheus Adapter will be used as custom-metrics framework.
-![Nokia custom-metrics support architecture of NCS ](../pics/nokia-hpa-custom-metrics.JPG)
-
-**Note: HPA based mechanism does not work for micro services that use fixed IPs only support service based micro services**
-
-## Prometheus Adaptor
-* resource metrics (replace metrics-server)
-* custom metrics
-* external metrics
-
-## Prometheus Adapter Integration into Kubernetes
-* Create Adapter Service
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: custom-metrics-apiserver
-  namespace: custom-metrics
-spec:
-  ports:
-  - port: 443
-    targetPort: 6443
-  selector:
-    app: custom-metrics-apiserver #binding to apdaper deployment
-```
-* Create APIService
-```yaml
-apiVersion: apiregistration.k8s.io/v1beta1
-kind: APIService
-metadata:
-  name: v1beta1.custom.metrics.k8s.io
-spec:
-  service:
-    name: custom-metrics-apiserver
-    namespace: custom-metrics
-  group: custom.metrics.k8s.io
-  version: v1beta1
-  insecureSkipTLSVerify: true
-  groupPriorityMinimum: 100
-  versionPriority: 100
----
-apiVersion: apiregistration.k8s.io/v1beta1
-kind: APIService
-metadata:
-  name: v1beta2.custom.metrics.k8s.io
-spec:
-  service:
-    name: custom-metrics-apiserver
-    namespace: custom-metrics
-  group: custom.metrics.k8s.io
-  version: v1beta2
-  insecureSkipTLSVerify: true
-  groupPriorityMinimum: 100
-  versionPriority: 200
----
-apiVersion: apiregistration.k8s.io/v1beta1
-kind: APIService
-metadata:
-  name: v1beta1.external.metrics.k8s.io
-spec:
-  service:
-    name: custom-metrics-apiserver
-    namespace: custom-metrics
-  group: external.metrics.k8s.io
-  version: v1beta1
-  insecureSkipTLSVerify: true
-  groupPriorityMinimum: 100
-  versionPriority: 100
----
-```
-
-![Kubernetes HPA with Prometheus](../pics/prometheus-hpa.JPG)
-
-
-https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/troubleshooting.md#troubleshooting-servicemonitor-changes
-
-
-### CaaS
-* Install Prometheus
-* Install prometheus-adapter w/ custom-metrics support
-
-```
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm install [RELEASE_NAME] prometheus-community/kube-prometheus-stack
-helm install [RELEASE_NAME] prometheus-community/prometheus-adapter
-
-NOTE: make sure prometheus-url configred in prometheus-adapter
-For example:
---prometheus-url=http://prometheus-kube-prometheus-prometheus.default.svc.cluster.local:9090
-
-root@eksa-2:~# helm list
-NAME              	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART                       	APP VERSION
-prometheus        	default  	1       	2022-04-11 04:51:14.907809968 +0000 UTC	deployed	kube-prometheus-stack-34.9.0	0.55.0     
-prometheus-adapter	default  	1       	2022-04-11 04:55:10.202758794 +0000 UTC	deployed	prometheus-adapter-3.2.0    	v0.9.1 
-```
-
-### Workt Items
-* Create ServiceMonitor (namespaced based) w/ label configured same with Prometheus serviceMonitorSelector -- .yaml
-* Create HPA (Resource + custom_metrics) - Configurable: autoscalling.enable|autoscalling.resource.enable|autoscalling.custom_metrics.enable
-* Create Prometheus Server to responds http://<svc.default.cluser.local>:port/metrics
-
-Following the following walkthrough to deploy test deployment
-https://github.com/kubernetes-sigs/prometheus-adapter/blob/v0.9.1/docs/walkthrough.md
-
-Read carefully the following pic, make sure your ServiceMonitor Label is line up with serviceMonitorSelector of Prometheus CR
-![Prometheus integration with ServiceMonitor](../pics/prometheus-service-monitoring.JPG)
-```yaml
-root@eksa-2:~/hpa/helm-charts-main/charts# kubectl get prometheus prometheus-kube-prometheus-prometheus -o yaml
-apiVersion: monitoring.coreos.com/v1
-kind: Prometheus
-metadata:
-  annotations:
-    meta.helm.sh/release-name: prometheus
-    meta.helm.sh/release-namespace: default
-  creationTimestamp: "2022-04-11T04:52:22Z"
-  generation: 2
-  labels:
-    app: kube-prometheus-stack-prometheus
-    app.kubernetes.io/instance: prometheus
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/part-of: kube-prometheus-stack
-    app.kubernetes.io/version: 34.9.0
-    chart: kube-prometheus-stack-34.9.0
-    heritage: Helm
-    release: prometheus
-  name: prometheus-kube-prometheus-prometheus
-  namespace: default
-  resourceVersion: "15406656"
-  uid: 097d36b6-64b1-4af5-a704-0a33b8b54ac8
-spec:
-  alerting:
-    alertmanagers:
-    - apiVersion: v2
-      name: prometheus-kube-prometheus-alertmanager
-      namespace: default
-      pathPrefix: /
-      port: http-web
-  enableAdminAPI: false
-  externalUrl: http://prometheus-kube-prometheus-prometheus.default:9090
-  image: quay.io/prometheus/prometheus:v2.34.0
-  listenLocal: false
-  logFormat: logfmt
-  logLevel: info
-  paused: false
-  podMonitorNamespaceSelector: {}
-  podMonitorSelector:
-    matchLabels:
-      release: prometheus
-  portName: http-web
-  probeNamespaceSelector: {}
-  probeSelector:
-    matchLabels:
-      release: prometheus
-  replicas: 1
-  retention: 10d
-  routePrefix: /
-  ruleNamespaceSelector: {}
-  ruleSelector:
-    matchLabels:
-      release: prometheus
-  securityContext:
-    fsGroup: 2000
-    runAsGroup: 2000
-    runAsNonRoot: true
-    runAsUser: 1000
-  serviceAccountName: prometheus-kube-prometheus-prometheus
-  serviceMonitorNamespaceSelector: {}
-  serviceMonitorSelector:  #RYAN: NOTE HERE TO MAKE SURE your ServiceMonitor Label line up the here
-    matchExpressions:
-    - key: app
-      operator: Exists
-    matchLabels:
-      release: prometheus
-  shards: 1
-  version: v2.34.0
-```
-```bash
-root@eksa-2:~/hpa/custom-metrics# kubectl get --raw "/apis/custom.metrics.k8s.io/v1beta1/namespaces/default/pods/*/http_requests?selector=app%3Dsample-app"
-{"kind":"MetricValueList","apiVersion":"custom.metrics.k8s.io/v1beta1","metadata":{"selfLink":"/apis/custom.metrics.k8s.io/v1beta1/namespaces/default/pods/%2A/http_requests"},"items":[{"describedObject":{"kind":"Pod","namespace":"default","name":"sample-app-84558dcdd-wshrz","apiVersion":"/v1"},"metricName":"http_requests","timestamp":"2022-04-11T08:04:23Z","value":"33m","selector":null}]}
-root@eksa-2:~/hpa/custom-metrics# 
-
-root@eksa-2:~/hpa/custom-metrics# kubectl get hpa
-NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
-sample-app   Deployment/sample-app   40m/500m   1         10        1          18h
-
-NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
-sample-app   Deployment/sample-app   596m/500m   1         10        2          18h
-sample-app-84558dcdd-qp5g2                               1/1     Running   0          55s
-sample-app-84558dcdd-wshrz                               1/1     Running   0          5h22m
-NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
-sample-app   Deployment/sample-app   596m/500m   1         10        2          18h
-sample-app-84558dcdd-qp5g2                               1/1     Running   0          56s
-sample-app-84558dcdd-wshrz                               1/1     Running   0          5h22m
-NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
-sample-app   Deployment/sample-app   596m/500m   1         10        2          18h
-sample-app-84558dcdd-qp5g2                               1/1     Running   0          57s
-sample-app-84558dcdd-wshrz                               1/1     Running   0          5h22m
-.....
-sample-app   Deployment/sample-app   418m/500m   1         10        3          19h
-sample-app-84558dcdd-jmrct                               1/1     Running   0          67m
-sample-app-84558dcdd-qp5g2                               1/1     Running   0          77m
-sample-app-84558dcdd-wshrz                               1/1     Running   0          6h39m
-NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
-sample-app   Deployment/sample-app   418m/500m   1         10        3          19h
-sample-app-84558dcdd-jmrct                               1/1     Running   0          67m
-sample-app-84558dcdd-qp5g2                               1/1     Running   0          77m
-sample-app-84558dcdd-wshrz                               1/1     Running   0          6h39m
-NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
-sample-app   Deployment/sample-app   418m/500m   1         10        3          19h
-sample-app-84558dcdd-jmrct                               1/1     Running   0          67m
-sample-app-84558dcdd-qp5g2                               1/1     Running   0          77m
-sample-app-84558dcdd-wshrz                               1/1     Running   0          6h39m
-NAME         REFERENCE               TARGETS     MINPODS   MAXPODS   REPLICAS   AGE
-sample-app   Deployment/sample-app   418m/500m   1         10        3          19h
-sample-app-84558dcdd-jmrct                               1/1     Running   0          67m
-sample-app-84558dcdd-qp5g2                               1/1     Running   0          77m
-sample-app-84558dcdd-wshrz                               1/1     Running   0          6h39m
-.....
-sample-app-84558dcdd-wshrz                               1/1     Running   0          6h53m
-NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
-sample-app   Deployment/sample-app   33m/500m   1         10        1          20h
-sample-app-84558dcdd-wshrz                               1/1     Running   0          6h53m
-NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
-sample-app   Deployment/sample-app   33m/500m   1         10        1          20h
-sample-app-84558dcdd-wshrz                               1/1     Running   0          6h53m
-NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
-sample-app   Deployment/sample-app   33m/500m   1         10        1          20h
-sample-app-84558dcdd-wshrz                               1/1     Running   0          6h53m
-NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
-sample-app   Deployment/sample-app   33m/500m   1         10        1          20h
-```
-
-
 
   
 # References
