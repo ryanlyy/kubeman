@@ -16,10 +16,10 @@ Kubernetes Scaling HPA
     - [cAdvisor + Prometheus](#cadvisor--prometheus)
 - [HPA Walkthrough](#hpa-walkthrough)
   - [Autoscaling on resource metrics (CPU)](#autoscaling-on-resource-metrics-cpu)
-- [Autoscaling on custom-metrics](#autoscaling-on-custom-metrics)
-  - [Nokia Blueprint](#nokia-blueprint)
-  - [Prometheus Adaptor](#prometheus-adaptor)
-  - [Prometheus Adapter Integration into Kubernetes](#prometheus-adapter-integration-into-kubernetes)
+  - [Autoscaling on custom-metrics](#autoscaling-on-custom-metrics)
+    - [Nokia Blueprint](#nokia-blueprint)
+    - [Prometheus Adaptor](#prometheus-adaptor)
+    - [Prometheus Adapter Integration into Kubernetes](#prometheus-adapter-integration-into-kubernetes)
     - [CaaS](#caas)
     - [Workt Items](#workt-items)
 - [Code through](#code-through)
@@ -326,20 +326,20 @@ php-apache   Deployment/php-apache   48%/50%    1         10        6          7
 https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/horizontal-pod-autoscaler-v2/
 https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough
 
-# Autoscaling on custom-metrics
-## Nokia Blueprint
+## Autoscaling on custom-metrics
+### Nokia Blueprint
 
 Prometheus and Prometheus Adapter will be used as custom-metrics framework.
 ![Nokia custom-metrics support architecture of NCS ](../pics/nokia-hpa-custom-metrics.JPG)
 
 **Note: HPA based mechanism does not work for micro services that use fixed IPs only support service based micro services**
 
-## Prometheus Adaptor
+### Prometheus Adaptor
 * resource metrics (replace metrics-server)
 * custom metrics
 * external metrics
 
-## Prometheus Adapter Integration into Kubernetes
+### Prometheus Adapter Integration into Kubernetes
 * Create Adapter Service
 ```yaml
 apiVersion: v1
