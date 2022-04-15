@@ -73,8 +73,9 @@ HPA is namespaced
     * scaleUp
     * scaleDown
   * metrics: metrics contains the specifications for which to use to calculate the desired replica count (the maximum replica count across all metrics will be used). The desired replica count is calculated multiplying the ratio between the target value and the current value by the current number of pods
-    * type (metrics source): ContainerResource|External|Object|Pods|Resource
-
+    * scaleTargetRef: target deployment or statefulset be scaled
+    * minReplicas, maxReplicas: the minimum and maximum Replicas Count to be scaled in and out
+    * metrics type (metrics source): ContainerResource|External|Object|Pods|Resource
       * resource (ResourceMetricSource) -- per pod
         * name(string): name of resource in questions
           * cpu
@@ -107,6 +108,8 @@ HPA is namespaced
           * averageValue
           * value
 
+        **These metrics describe Pods, and are averaged together across Pods and compared with a target value to determine the replica count**
+
       * object (ObjectMetricSource)
         * describedOject (CrossVersionObjectReference)
           * kind
@@ -121,6 +124,8 @@ HPA is namespaced
           * averageValue
           * value
 
+        **These metrics describe a different object in the same namespace, instead of describing Pods**
+
       * external (**ExternalMetricSource**)
         * metric
           * name(string): namve of given metric
@@ -131,7 +136,10 @@ HPA is namespaced
           * averageValue
           * value
 
-NOTE: selector is the string-encoded form of a standard kubernetes label selector for the given metric When set, it is passed as an additional parameter to the **metrics server** for more specific metrics scoping. When unset, just the metricName will be used to gather metrics.
+NOTE: 
+* selector is the string-encoded form of a standard kubernetes label selector for the given metric When set, it is passed as an additional parameter to the **metrics server** for more specific metrics scoping. When unset, just the metricName will be used to gather metrics.
+* If you provide multiple such metric blocks, the HorizontalPodAutoscaler will consider each metric in turn. The HorizontalPodAutoscaler will calculate proposed replica counts for each metric, and then **choose the one with the highest replica count**.
+*  **pod or object selection is decided by where the metrics is coming from**
 
 
 # Scaling on  metrics
