@@ -22,6 +22,7 @@ Kubernetes Scaling HPA
     - [Prometheus Adapter Integration into Kubernetes](#prometheus-adapter-integration-into-kubernetes)
     - [CaaS](#caas)
     - [Workt Items](#workt-items)
+    - [How to configure Prometheus to scrape metrics from CNF](#how-to-configure-prometheus-to-scrape-metrics-from-cnf)
 - [Code through](#code-through)
 - [References](#references)
 
@@ -438,6 +439,104 @@ prometheus-adapter	default  	1       	2022-04-11 04:55:10.202758794 +0000 UTC	de
 * Create ServiceMonitor (namespaced based) w/ label configured same with Prometheus serviceMonitorSelector -- .yaml
 * Create HPA (Resource + custom_metrics) - Configurable: autoscalling.enable|autoscalling.resource.enable|autoscalling.custom_metrics.enable
 * Create Prometheus Server to responds http://<svc.default.cluser.local>:port/metrics
+
+### How to configure Prometheus to scrape metrics from CNF
+1. Prometheus Configuraiton and Pod Annonation
+  ```yaml
+  - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+        - role: pod
+
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: kubernetes_pod_name
+  ```
+  ```yaml
+  metadata:
+    annotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/path: '/data/metrics'
+      prometheus.io/port: '80'
+  ```
+
+2. scrape Rule
+  ```yaml
+      # Here it's Prometheus itself.
+    scrape_configs:
+      - job_name: 'sla-monitoring'
+        scrape_interval: 10s
+        dns_sd_configs:
+        - refresh_interval: 120s
+          names:
+          - sla-monitoring.default.svc.cluster.local
+          type: 'A'
+          port: 8989
+
+      - job_name: 'metric-collector'
+        scrape_interval: 10s
+        dns_sd_configs:
+        - refresh_interval: 120s
+          names:
+          - metrics-collector.kube-system.svc.cluster.local
+          type: 'A'
+          port: 8989
+
+  ```
+3. ServiceMinitor
+```yaml
+   # Service targeting gitlab instances
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-metrics
+  labels:
+    app: gitlab-runner-gitlab-runner
+spec:
+  ports:
+  - name: metrics # expose metrics port
+    port: 9252 # defined in gitlab chart
+    targetPort: metrics
+    protocol: TCP
+  selector:
+    app: gitlab-runner-gitlab-runner # target gitlab pods
+---
+#if custom-metrics.enable
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gitlab-metrics-servicemonitor
+  # Change this to the namespace the Prometheus instance is running in
+  # namespace: default
+  labels:
+    app: gitlab-runner-gitlab-runner
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: gitlab-runner-gitlab-runner # target gitlab service
+  endpoints:
+  - port: metrics
+    interval: 15s
+#endif
+```
 
 Following the following walkthrough to deploy test deployment
 https://github.com/kubernetes-sigs/prometheus-adapter/blob/v0.9.1/docs/walkthrough.md
@@ -1096,3 +1195,4 @@ func startHPAController(ctx context.Context, controllerContext ControllerContext
 * https://aws.amazon.com/blogs/mt/automated-scaling-of-applications-running-on-eks-using-custom-metric-collected-by-amazon-prometheus-using-prometheus-adapter/
 * https://towardsdatascience.com/kubernetes-hpa-with-custom-metrics-from-prometheus-9ffc201991e
 * https://hackernoon.com/how-to-use-prometheus-adapter-to-autoscale-custom-metrics-deployments-p1p3tl0
+* https://prometheus.io/docs/prometheus/latest/configuration/configuration/
