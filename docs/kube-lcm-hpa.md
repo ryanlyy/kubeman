@@ -14,15 +14,18 @@ Kubernetes Scaling HPA
     - [Extenstion APIserver - Register APIService objects](#extenstion-apiserver---register-apiservice-objects)
   - [Monitoring Pipeline](#monitoring-pipeline)
     - [cAdvisor + Prometheus](#cadvisor--prometheus)
+    - [Application Level Adapter](#application-level-adapter)
 - [HPA Walkthrough](#hpa-walkthrough)
   - [Autoscaling on resource metrics (CPU)](#autoscaling-on-resource-metrics-cpu)
   - [Autoscaling on custom-metrics](#autoscaling-on-custom-metrics)
-    - [Nokia Blueprint](#nokia-blueprint)
+    - [Community Adaptoer](#community-adaptoer)
     - [Prometheus Adaptor](#prometheus-adaptor)
     - [Prometheus Adapter Integration into Kubernetes](#prometheus-adapter-integration-into-kubernetes)
     - [CaaS](#caas)
     - [Workt Items](#workt-items)
     - [How to configure Prometheus to scrape metrics from CNF](#how-to-configure-prometheus-to-scrape-metrics-from-cnf)
+    - [Application Adaptor to HPA Controler](#application-adaptor-to-hpa-controler)
+    - [Application Autoscaling Controler w/o HPA](#application-autoscaling-controler-wo-hpa)
 - [Code through](#code-through)
 - [References](#references)
 
@@ -260,6 +263,11 @@ monitoring pipeline would  have to create a stateless **API adapter** that **pul
 * **service metrics exposed by containers** via HTTP handler in Prometheus format
 * [optional] metrics about node itself from Node Exporter (a Prometheus component)
 
+### Application Level Adapter
+User can development its self Adaptor which provided APIServer consumed by HPA controller
+
+https://github.com/kubernetes-sigs/custom-metrics-apiserver
+
 # HPA Walkthrough
 ## Autoscaling on resource metrics (CPU)
 * metrics-server 
@@ -336,7 +344,7 @@ https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/horizonta
 https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough
 
 ## Autoscaling on custom-metrics
-### Nokia Blueprint
+### Community Adaptoer
 
 Prometheus and Prometheus Adapter will be used as custom-metrics framework.
 ![Nokia custom-metrics support architecture of NCS ](../pics/nokia-hpa-custom-metrics.JPG)
@@ -668,6 +676,11 @@ sample-app-84558dcdd-wshrz                               1/1     Running   0    
 NAME         REFERENCE               TARGETS    MINPODS   MAXPODS   REPLICAS   AGE
 sample-app   Deployment/sample-app   33m/500m   1         10        1          20h
 ```
+### Application Adaptor to HPA Controler
+https://github.com/kubernetes-sigs/custom-metrics-apiserver
+
+### Application Autoscaling Controler w/o HPA
+Application Monitor provides monitor to monitor Application metrics and update kubernetes resource (deployment/statefulset) replicas to implement autoscaling 
 
 # Code through
 ```golang
