@@ -21,6 +21,7 @@ The default seccomp profile provides a sane default for running containers with 
 https://github.com/moby/moby/blob/master/profiles/seccomp/default.json
 
 # CRIO default 
+[SecurityProfile_RuntimeDefault](https://github.com/cri-o/cri-o/blob/main/internal/config/seccomp/seccomp.go)
 ```bash
 /etc/crio/seccomp.json
 ```

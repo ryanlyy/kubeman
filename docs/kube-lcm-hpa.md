@@ -74,6 +74,122 @@ HPA is namespaced
     * name (workload name in this namespace on that kind)
     * apiVersion(kind API Version)
   * behavior (HorizontalPodAutoscalerBehavior)
+    ```yaml
+    behavior:
+      scaleDown:
+        policies:
+          type:
+          value:
+          periodSeconds:
+        selectPolicy:
+        stabilizationWindowSeconds:
+    ```
+
+      ```golang     
+        const (
+                // MaxChangePolicySelect  selects the policy with the highest possible change.
+                MaxChangePolicySelect ScalingPolicySelect = "Max"
+                // MinChangePolicySelect selects the policy with the lowest possible change.
+                MinChangePolicySelect ScalingPolicySelect = "Min"
+                // DisabledPolicySelect disables the scaling in this direction.
+                DisabledPolicySelect ScalingPolicySelect = "Disabled"
+        )
+        // HPAScalingRules configures the scaling behavior for one direction.
+        // These Rules are applied after calculating DesiredReplicas from metrics for the HPA.
+        // They can limit the scaling velocity by specifying scaling policies.
+        // They can prevent flapping by specifying the stabilization window, so that the
+        // number of replicas is not set instantly, instead, the safest value from the stabilization
+        // window is chosen.
+        type HPAScalingRules struct {
+                // StabilizationWindowSeconds is the number of seconds for which past recommendations should be
+                // considered while scaling up or scaling down.
+                // StabilizationWindowSeconds must be greater than or equal to zero and less than or equal to 3600 (one hour).
+                // If not set, use the default values:
+                // - For scale up: 0 (i.e. no stabilization is done).
+                // - For scale down: 300 (i.e. the stabilization window is 300 seconds long).
+                // +optional
+                StabilizationWindowSeconds *int32 `json:"stabilizationWindowSeconds,omitempty" protobuf:"varint,3,opt,name=stabilizationWindowSeconds"`
+                // selectPolicy is used to specify which policy should be used.
+                // If not set, the default value Max is used.
+                // +optional
+                SelectPolicy *ScalingPolicySelect `json:"selectPolicy,omitempty" protobuf:"bytes,1,opt,name=selectPolicy"`
+                // policies is a list of potential scaling polices which can be used during scaling.
+                // At least one policy must be specified, otherwise the HPAScalingRules will be discarded as invalid
+                // +listType=atomic
+                // +optional
+                Policies []HPAScalingPolicy `json:"policies,omitempty" listType:"atomic" protobuf:"bytes,2,rep,name=policies"`
+        }
+
+        // HorizontalPodAutoscalerBehavior configures a scaling behavior for Up and Down direction
+        // (scaleUp and scaleDown fields respectively).
+        type HorizontalPodAutoscalerBehavior struct {
+                // scaleUp is scaling policy for scaling Up.
+                // If not set, the default value is the higher of:
+                //   * increase no more than 4 pods per 60 seconds
+                //   * double the number of pods per 60 seconds
+                // No stabilization is used.
+                // +optional
+                ScaleUp *HPAScalingRules
+                // scaleDown is scaling policy for scaling Down.
+                // If not set, the default value is to allow to scale down to minReplicas pods, with a
+                // 300 second stabilization window (i.e., the highest recommendation for
+                // the last 300sec is used).
+                // +optional
+                ScaleDown *HPAScalingRules
+        }
+
+
+        // HPAScalingPolicyType is the type of the policy which could be used while making scaling decisions.
+        type HPAScalingPolicyType string
+
+        const (
+                // PodsScalingPolicy is a policy used to specify a change in absolute number of pods.
+                PodsScalingPolicy HPAScalingPolicyType = "Pods"
+                // PercentScalingPolicy is a policy used to specify a relative amount of change with respect to
+                // the current number of pods.
+                PercentScalingPolicy HPAScalingPolicyType = "Percent"
+        )
+
+        var (
+                // These constants repeats previous HPA behavior
+                scaleUpLimitPercent         int32 = 100
+                scaleUpLimitMinimumPods     int32 = 4
+                scaleUpPeriod               int32 = 15
+                scaleUpStabilizationSeconds int32
+                maxPolicy                   = autoscalingv2.MaxChangePolicySelect
+                defaultHPAScaleUpRules      = autoscalingv2.HPAScalingRules{
+                        StabilizationWindowSeconds: &scaleUpStabilizationSeconds,
+                        SelectPolicy:               &maxPolicy,
+                        Policies: []autoscalingv2.HPAScalingPolicy{
+                                {
+                                        Type:          autoscalingv2.PodsScalingPolicy,
+                                        Value:         scaleUpLimitMinimumPods,
+                                        PeriodSeconds: scaleUpPeriod,
+                                },
+                                {
+                                        Type:          autoscalingv2.PercentScalingPolicy,
+                                        Value:         scaleUpLimitPercent,
+                                        PeriodSeconds: scaleUpPeriod,
+                                },
+                        },
+                }
+                scaleDownPeriod int32 = 15
+                // Currently we can set the downscaleStabilizationWindow from the command line
+                // So we can not rewrite the command line option from here
+                scaleDownLimitPercent    int32 = 100
+                defaultHPAScaleDownRules       = autoscalingv2.HPAScalingRules{
+                        StabilizationWindowSeconds: nil,
+                        SelectPolicy:               &maxPolicy,
+                        Policies: []autoscalingv2.HPAScalingPolicy{
+                                {
+                                        Type:          autoscalingv2.PercentScalingPolicy,
+                                        Value:         scaleDownLimitPercent,
+                                        PeriodSeconds: scaleDownPeriod,
+                                },
+                        },
+                }
+        )
+      ```
     * scaleUp
     * scaleDown
   * metrics: metrics contains the specifications for which to use to calculate the desired replica count (the maximum replica count across all metrics will be used). The desired replica count is calculated multiplying the ratio between the target value and the current value by the current number of pods
