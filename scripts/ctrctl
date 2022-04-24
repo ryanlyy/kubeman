@@ -1,0 +1,37 @@
+if [[ $# -eq 0 ]]; then
+	echo "Usage: $0 <cmd> [user]"
+	echo "	cmd: cmd run in container"
+	echo "	user: optional (for example root)"
+	echo "	ctrl-c to break"
+	exit
+fi
+
+CONT_CMD=$1
+CONT_USER=""
+if [[ $# -eq 2 ]]; then
+	CONT_USER=$2
+fi
+
+typeset -A CONT_LIST=$(ctr -n k8s.io c ls |grep -v -i "container.*image" |  awk '{ print $1","$2 }' | tr -s "\n" " ")
+PS3="Enter Container Index: "
+select CONT in ${CONT_LIST}
+do
+	#echo $CONT
+	if [[ $CONT == "" ]]; then
+		continue
+	fi
+	CONT_ID=$(echo $CONT | cut -d "," -f1)
+	#echo $CONT_ID
+	CONT_PID=$(ctr -n k8s.io t ls | grep $CONT_ID | awk '{ print $2 }')
+	#echo $CONT_PID
+	if [[ "$CONT_PID" == "" ]]; then
+		echo "Not runing container, continuing..."
+		continue
+	fi
+	if [[ "$CONT_USER" == "" ]]; then
+		ctr -n k8s.io task exec  --exec-id $CONT_PID -t $CONT_ID $CONT_CMD
+	else
+		ctr -n k8s.io task exec --user $CONT_USER --exec-id $CONT_PID -t $CONT_ID $CONT_CMD
+	fi
+done
+

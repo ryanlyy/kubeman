@@ -20,7 +20,7 @@ Scheduling Preemption and Eviction
   - [Pod Priority and Preemption](#pod-priority-and-preemption)
   - [Node-pressure Eviction](#node-pressure-eviction)
   - [API-initiated Eviction](#api-initiated-eviction)
-- [Pod Topology Spread Constraints](#pod-topology-spread-constraints)
+- [Topology Spread Constraints](#topology-spread-constraints)
 
 https://kubernetes.io/docs/concepts/scheduling-eviction/
 
@@ -44,4 +44,4 @@ https://kubernetes.io/docs/concepts/scheduling-eviction/
 ## Pod Priority and Preemption
 ## Node-pressure Eviction
 ## API-initiated Eviction
-# Pod Topology Spread Constraints
+# Topology Spread Constraints
