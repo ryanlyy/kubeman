@@ -25,7 +25,9 @@ do
 	CONT_PID=$(ctr -n k8s.io t ls | grep $CONT_ID | awk '{ print $2 }')
 	#echo $CONT_PID
 	if [[ "$CONT_PID" == "" ]]; then
-		echo "Can not find Process ID for this container, chose another container; continuing..."
+		echo "Can not find Process ID for this container(maybe terminated), please see ./$CONT_ID.info for detail."
+		echo "Please chose another container; continuing..."
+		ctr -n k8s.io c info $CONT_ID > ./$CONT_ID.info
 		continue
 	fi
 	if [[ "$CONT_USER" == "" ]]; then
