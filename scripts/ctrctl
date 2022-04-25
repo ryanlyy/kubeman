@@ -1,3 +1,6 @@
+##################################################################
+exec-id: any string of course it can be pid 
+##################################################################
 if [[ $# -eq 0 ]]; then
 	echo "Usage: $0 <cmd> [user]"
 	echo "	cmd: cmd run in container"
