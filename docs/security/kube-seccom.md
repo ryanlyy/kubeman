@@ -8,6 +8,8 @@ This page is related with seccomp
 - [seccomp kube implementation](#seccomp-kube-implementation)
 
 
+https://jvns.ca/blog/2020/04/29/why-strace-doesnt-work-in-docker/
+
 # seccomp Purpose
 https://kubernetes.io/docs/tutorials/clusters/seccomp/
 
