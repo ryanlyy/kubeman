@@ -1,5 +1,12 @@
 ##################################################################
-exec-id: any string of course it can be pid 
+# exec-id: any string of course it can be pid, in this script using the host level PID of first PID running in container
+# Exec in container
+#	ctr -n k8s.io task exec --exec-id 14831 -t  52aac01a3a7d66f9f61c163b4e0dc29a4f9024c4e751f592dbddb7d38c0b20b4 bash
+# List all tasks running in that container
+# 	ctr -n k8s.io task ps 52aac01a3a7d66f9f61c163b4e0dc29a4f9024c4e751f592dbddb7d38c0b20b4
+#
+# Remove tasks running in that container (note, here --exec-id is ExecID show in above cmd )
+# 	ctr -n k8s.io task delete -f --exec-id 14831 52aac01a3a7d66f9f61c163b4e0dc29a4f9024c4e751f592dbddb7d38c0b20b4
 ##################################################################
 if [[ $# -eq 0 ]]; then
 	echo "Usage: $0 <cmd> [user]"
