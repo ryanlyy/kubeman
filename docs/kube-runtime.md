@@ -20,6 +20,7 @@ Container Runtime: containerd, cri-o and podman
 - [Application](#application)
 - [NTAS Impact](#ntas-impact)
 - [NCS Features](#ncs-features)
+- [conmon](#conmon)
 
 # Deployment
 
@@ -239,6 +240,86 @@ here 9514adf056d8 is container id
 |N/A|N/A|N/A|N/A|volume | N/A |
 | Container|wait |N/A |N/A | wait | N/A |
 
+NOTE: 
+* ctr -n k8s.io task list: only list first task of each container
+  ```bash
+  [root@bcmt-edge-08 containerd]# ctr -n k8s.io task list
+  TASK                                                                PID      STATUS    
+  3ff050f94433a6039749739106153e4ef4f7e93ed8596953da328904e14b9414    14720    RUNNING
+  f8f42ee430153286ae3f3d4e496e39a021fbf5af1db64ec34b184ab298fc61eb    16880    RUNNING
+  97c16a17cef4f16136e6db9c6beffdf7f7cd88ad4085872ed2f69df2ce03487c    27873    RUNNING
+  400487902e4988361ea8ee4e06cbc53e531367c3abbb83b4805eeb5ffd6fc25f    2824     RUNNING
+  8c555b2ee6f57e93a8103c24d25eff3bf48a49b9ee1db2db3a42c6197bf533e7    14256    RUNNING
+  1d8ceb8be21eab45179439ae40d6a16f10b55d2f39f668ceddd9bdfd923961a7    14198    RUNNING
+  52aac01a3a7d66f9f61c163b4e0dc29a4f9024c4e751f592dbddb7d38c0b20b4    14831    RUNNING
+  362cea9ebbcb264c3fcb4288b2a37dec8a66dac66ce14525d037c8bb961420b7    16621    RUNNING
+  465dd78090b6f8e20f0cf12f2b34c0d7c7a0338b463bf838816ed0a5cd86ca6d    27721    RUNNING
+  0c816b9c319bb6f11e40be5206d9d2dbcb62ce04e1c70bad0ec7e160dc8fa4be    2910     RUNNING
+  c9e4c00d6071364dfca56ed3ee1498f13a112cc5aef6b8c70c850301d9b6cf0a    14044    RUNNING
+  62e2a8750383d1b44eb7d97067de72ebd8465dcffa39639b6e5ea5003c54a162    17877    RUNNING
+  921e5a5cfe02919ab0eba8619687be00dbd433dc2ba443903f58c77f740981a9    25714    RUNNING
+  7a22a2ea111285a6928c23f9b2f9cc54b6d6bcf2546566387248135a8d0256c1    25948    RUNNING
+  f931814cf8aa2b5867edb509488e6ae7b0b2eb74a55b9730cc42b125805cb899    25858    RUNNING
+  332c31e04ea79cc0392489c7326fef366a356a334a22687577df86ee7f487f6b    15105    RUNNING
+  bad0f88bdf2dcec0d3a23036876ef071b579feadb2322b0c023c60e205146503    17018    RUNNING
+  9c410383094a5abaa2c10ad5abe7989bf9ad41b97389c08c64236bb114249def    15455    RUNNING
+  d80bfdca47d34d08d566afdb304988efe5c07915c578e96b003f1a855970926a    17782    RUNNING
+  a667c44e8fb56dd9ea92dcf011c35d5ad11a288374a4da3ab43301a79513cc45    25903    RUNNING
+  b39a225bb4f56a1b76648803f09cfa8ff160ebd61e0078115221f0f363a33d66    14139    RUNNING
+  9cb644f7ab17eab7d8fdbe86876f9a4f36c667f46e7a2c0fa9df3465b283eb26    15287    RUNNING
+  c0c91fe42e80570690047d3186a94e83410ce8530de415d053eee29bc6271ea3    15323    RUNNING
+  09c88a0d6893f6fa70c1175ee37e4815a28282b4599829b3e1064ae89e555978    15791    RUNNING
+  25a623f1bebf161305cab8a151c720617eacb72d3eaf63ce272e5fa569426c56    27994    RUNNING
+  9245c7790c7b7e876e0f81c678d51e4dbbfc7ded3c5d23f72e1aae5e3a1e8bd9    23254    RUNNING
+  8cbc05e6ba4d707554bba9db417ce4577a37f20b158b482ae47f5f13403bfd91    23351    RUNNING
+  274ae007230060625eff398f9ec868024fec6804380dfe8014c0e8e100e1e638    27755    RUNNING
+  37e761883263d8b75f8ca6cdc06bf10b08d5ceff84133eefaa0916541cc02138    23023    RUNNING
+  ab995290a7850c2c0dc18dba864eca20387f763e067c60bc59193304585359f0    15518    RUNNING
+  ```
+* ctr -n k8s.io task ps 52aac01a3a7d66f9f61c163b4e0dc29a4f9024c4e751f592dbddb7d38c0b20b4: show all tasks of specified container
+
+  and you can list all exec task with ExecID information
+  ```bash
+  [root@bcmt-edge-08 containerd]# ctr -n k8s.io task ps 52aac01a3a7d66f9f61c163b4e0dc29a4f9024c4e751f592dbddb7d38c0b20b4
+  PID      INFO
+  2071     &ProcessDetails{ExecID:14831,XXX_unrecognized:[],}
+  7198     -
+  7403     &ProcessDetails{ExecID:36caee48e83e4afeef1e26dbde6805c2c4632e9685faa65bb2af846d7903d717,XXX_unrecognized:[],}
+  11345    &ProcessDetails{ExecID:def,XXX_unrecognized:[],}
+  14831    -
+  14931    -
+  14932    -
+  14933    -
+  14935    -
+  23093    -
+  23094    -
+  23095    -
+  23103    -
+  23112    -
+  23120    -
+  23121    -
+  23122    -
+  23123    -
+  23124    -
+  23127    -
+  23788    -
+  23789    -
+  23790    -
+  23791    -
+  23792    -
+  23793    -
+  23794    -
+  [root@bcmt-edge-08 containerd]#
+  ```
+  Here **PID** means host node PID instead of container PID
+  cat /proc/$pid/status | grep NSpid
+
+  sometime you may meet "ctr: id 14831: already exists"; do:
+  ```bash
+  ctr -n k8s.io task delete -f --exec-id 14831 52aac01a3a7d66f9f61c163b4e0dc29a4f9024c4e751f592dbddb7d38c0b20b4
+  ```
+
+
 ## Container Tool Project
 https://github.com/containers
 
@@ -277,3 +358,10 @@ In this feature, docker engine will be removed and containerd as CRI runtime int
 BCMT admin container will be started by podman instead of docker anymore after this feature and using podman to push all infra + application images into local registry and then kubernetes/containerd can pull its images and start container.
 
 in Openshift, crio is used w/ buildah
+
+
+# conmon
+
+An OCI container runtime monitor.
+
+Conmon is a monitoring program and communication tool between a container manager (like Podman or CRI-O) and an OCI runtime (like runc or crun) for a single container.

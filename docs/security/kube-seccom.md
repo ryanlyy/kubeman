@@ -268,4 +268,31 @@ func SeccompFieldForAnnotation(annotation string) *api.SeccompProfile {
         return nil
 }
 
+
+// convertToRuntimeSecurityContext converts v1.SecurityContext to runtimeapi.SecurityContext.
+func convertToRuntimeSecurityContext(securityContext *v1.SecurityContext) *runtimeapi.LinuxContainerSecurityContext {
+        if securityContext == nil {
+                return nil
+        }
+
+        sc := &runtimeapi.LinuxContainerSecurityContext{
+                Capabilities:   convertToRuntimeCapabilities(securityContext.Capabilities),
+                SelinuxOptions: convertToRuntimeSELinuxOption(securityContext.SELinuxOptions),
+        }
+        if securityContext.RunAsUser != nil {
+                sc.RunAsUser = &runtimeapi.Int64Value{Value: int64(*securityContext.RunAsUser)}
+        }
+        if securityContext.RunAsGroup != nil {
+                sc.RunAsGroup = &runtimeapi.Int64Value{Value: int64(*securityContext.RunAsGroup)}
+        }
+        if securityContext.Privileged != nil {
+                sc.Privileged = *securityContext.Privileged
+        }
+        if securityContext.ReadOnlyRootFilesystem != nil {
+                sc.ReadonlyRootfs = *securityContext.ReadOnlyRootFilesystem
+        }
+
+        return sc
+}
+
 ```
