@@ -18,6 +18,7 @@ Kubernetes Upgrade Knowledge Base
 - [Statefulset Upgrade](#statefulset-upgrade)
 - [Help Upgrade](#help-upgrade)
   - [Resource Installation Order](#resource-installation-order)
+- [Canary Upgrade](#canary-upgrade)
 
 
 # Upgrade Basic
@@ -258,3 +259,6 @@ kubectl rollout status ds/<daemonset-name>
 }
 
 ```
+
+# Canary Upgrade
+https://phoenixnap.com/kb/kubernetes-canary-deployments
