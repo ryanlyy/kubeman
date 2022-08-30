@@ -83,6 +83,7 @@ admin commands are:
 ```bash
 bash-4.4$ curl http://192.168.34.118:9903/config_dump
 ```
+[envoy configuration example](kube-envoy-config.yaml)
 
 # How to enable log trace
 ```bash
