@@ -27,9 +27,12 @@ Kubernetes Scaling HPA
     - [Application Adaptor to HPA Controler](#application-adaptor-to-hpa-controler)
     - [Application Autoscaling Controler w/o HPA](#application-autoscaling-controler-wo-hpa)
 - [Code through](#code-through)
+- [KEDA](#keda)
 - [References](#references)
 
 https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+
+https://github.com/kubernetes/enhancements/blob/master/keps/sig-autoscaling/853-configurable-hpa-scale-velocity/README.md#story-1-scale-up-as-fast-as-possible
 
 # Overview
 In Kubernetes, a HorizontalPodAutoscaler automatically updates a workload resource (such as a Deployment or StatefulSet), with the aim of automatically scaling the workload to match demand except DaemonSet
@@ -1314,7 +1317,16 @@ func startHPAController(ctx context.Context, controllerContext ControllerContext
 
 ```
 
-  
+# KEDA
+
+OpenShift: Custom Metrics Autoscaler is built on CNCF Project KEDA
+
+
+KEDA is a Kubernetes-based Event Driven Autoscaler. With KEDA, you can drive the scaling of any container in Kubernetes based on the number of events needing to be processed.
+
+KEDA is a single-purpose and lightweight component that can be added into any Kubernetes cluster. KEDA works alongside standard Kubernetes components like the Horizontal Pod Autoscaler and can extend functionality without overwriting or duplication. With KEDA you can explicitly map the apps you want to use event-driven scale, with other apps continuing to function. This makes KEDA a flexible and safe option to run alongside any number of any other Kubernetes applications or frameworks.
+
+
 # References
 * https://towardsdatascience.com/kubernetes-hpa-with-custom-metrics-from-prometheus-9ffc201991e
 * https://www.ibm.com/docs/en/cloud-private/3.1.2?topic=tp-horizontal-pod-auto-scaling-by-using-custom-metrics

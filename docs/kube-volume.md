@@ -1,22 +1,24 @@
 This page is related with volumes
 ---
 
-- [How to change kubelet root-dir](#how-to-change-kubelet-root-dir)
-- [volumes used in NCS](#volumes-used-in-ncs)
 - [tmpfs](#tmpfs)
 - [container & Image volume](#container--image-volume)
 - [/ disk](#-disk)
 - [ephemeral storage](#ephemeral-storage)
   - [Size](#size)
-  - [emptyDir: empty at Pod startup, with storage coming locally from the kubelet base directory (usually the root disk) or RAM](#emptydir-empty-at-pod-startup-with-storage-coming-locally-from-the-kubelet-base-directory-usually-the-root-disk-or-ram)
+  - [emptyDir](#emptydir)
   - [secret](#secret)
   - [configMap](#configmap)
   - [downwardAPI as volume](#downwardapi-as-volume)
-  - [CSI ephemerial volumes](#csi-ephemerial-volumes)
-  - [cephfs](#cephfs)
-  - [General ephemeral volumes](#general-ephemeral-volumes)
-- [persistent storage](#persistent-storage)
+- [volumes](#volumes)
+- [Types of volumes](#types-of-volumes)
+  - [persistentVolumeClaim](#persistentvolumeclaim)
+  - [PersistentVolume](#persistentvolume)
+  - [k8s storage class](#k8s-storage-class)
 - [how to find pod volumes](#how-to-find-pod-volumes)
+  - [glusterfs](#glusterfs)
+  - [local-storage](#local-storage)
+- [epheramal local storage limitatioin](#epheramal-local-storage-limitatioin)
 
 
 
@@ -26,11 +28,7 @@ Ephemeral local storage is always made available in the primary partition. There
 
 This partition holds the kubelet root directory, /var/lib/kubelet/ by default, and /var/log/ directory. This partition can be shared between user pods, the OS, and Kubernetes system daemons. This partition can be consumed by pods through EmptyDir volumes, container logs, image layers, and container-writable layers. Kubelet manages shared access and isolation of this partition. This partition is ephemeral, and applications cannot expect any performance SLAs, such as disk IOPS, from this partition.
 
-* Runtime
-
-This is an optional partition that runtimes can use for overlay file systems. OpenShift Container Platform attempts to identify and provide shared access along with isolation to this partition. Container image layers and writable layers are stored here. If the runtime partition exists, the root partition does not hold any image layer or other writable storage.
-
-# How to change kubelet root-dir
+How to change kubelet root-dir
 ```bash
 /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 
@@ -40,13 +38,10 @@ Environment="KUBELET_EXTRA_ARGS=$KUBELET_EXTRA_ARGS --root-dir=/data/k8s/kubelet
 	Directory path for managing kubelet files (volume mounts, etc).
 ```
 
-# volumes used in NCS
-```bash
-kubernetes.io~configmap
-kubernetes.io~csi
-kubernetes.io~empty-dir
-kubernetes.io~secret
-```
+* Runtime
+
+This is an optional partition that runtimes can use for overlay file systems. OpenShift Container Platform attempts to identify and provide shared access along with isolation to this partition. Container image layers and writable layers are stored here. If the runtime partition exists, the root partition does not hold any image layer or other writable storage.
+
 # tmpfs
 When creating tmpfs without size specified, the size of tmpfs will be half of the size of total memory
 
@@ -65,13 +60,11 @@ Swap:             0           0           0
 ```
 Types of tmpfs in kubernetes
 * emptyDir w/ memory media
-* secret
-  
+* secret 
 * shm
 * /sys/fs/cgroup
 * /run
 * /dev
-
 
 # container & Image volume
 ```bash
@@ -123,7 +116,8 @@ CSI ephemeral volumes: similar to the previous volume kinds, but provided by spe
 
 Generic ephemeral volumes, which can be provided by all storage drivers that also support persistent volumes
 
-## emptyDir: empty at Pod startup, with storage coming locally from the kubelet base directory (usually the root disk) or RAM
+## emptyDir
+empty at Pod startup, with storage coming locally from the kubelet base directory (usually the root disk) or RAM
 
 ```golang
 enum StorageMedium {
@@ -386,33 +380,126 @@ The following information is available through environment variables:
               divisor: 1Mi
 
   ```
-## CSI ephemerial volumes
-the storage is managed locally on each node and is created together with other local resources after a Pod has been scheduled onto a node
 
-A csi volume can be used in a Pod in three different ways:
+# volumes
 
-    * through a reference to a PersistentVolumeClaim
-    * with a generic ephemeral volume (alpha feature)
-    * with a CSI ephemeral volume if the driver supports that (beta feature)
+On-disk files in a container are ephemeral, which presents some problems for non-trivial applications when running in containers:
+* One problem is the loss of files when a container crashes. The kubelet restarts the container but with a clean state. 
+* A second problem occurs when sharing files between containers running together in a Pod. 
+ 
+The Kubernetes volume abstraction solves both of these problems
 
-
-## cephfs
-  
-  A cephfs volume allows an existing CephFS volume to be mounted into your Pod;
-
-  the contents of a cephfs volume are preserved and the volume is merely unmounted
-
-  This means that a cephfs volume can be pre-populated with data, and that data can be shared between pods
-
-  NOTE: You must have your own Ceph server running with the share exported before you can use it
-
+# Types of volumes
+* cephfs
 * cinder
+* configMap
+* downwardAPI
+* emptyDir
+* fc(fibre channel)
+* glusterfs
+* hostPath
+* local
+* nfs
+* persistentVolumeClaim
+* projected
+* rbd(Rados Block Device)
+* secret
+* csi
+
+## persistentVolumeClaim 
+A persistentVolumeClaim volume is used to mount a PersistentVolume into a Pod. persistentVolumeClaims are a way for users to "claim" durable storage (such as a GCE PersistentDisk or an iSCSI volume) without knowing the details of the particular cloud environment.
+
+## PersistentVolume 
+a piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned using Storage Classes.
+* cephfs
+* csi
+* fc
+* glusterfs
+* hostPath
+* nfs
+* rbd
   
-## General ephemeral volumes
 
-# persistent storage 
+## k8s storage class
+```bash
+[root@hpg10ncs-hpg10ncs-masterbm-0 ryliu (Active)]# kubectl get storageclass
+NAME                    PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+csi-cephfs              cephfs.csi.ceph.com            Delete          Immediate              true                   52d
+csi-cephrbd (default)   rbd.csi.ceph.com               Delete          Immediate              true                   52d
+local-storage           kubernetes.io/no-provisioner   Delete          WaitForFirstConsumer   false                  52d
+[root@udm012-control-02 ~]# kubectl get storageclass
+NAME                           PROVISIONER                    RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+cinder-az-nova (default)       cinder.csi.openstack.org       Delete          Immediate              true                   14d
+cinder-az-nova-xfs             cinder.csi.openstack.org       Delete          Immediate              true                   14d
+cinder-tripleo-ceph-nova       cinder.csi.openstack.org       Delete          Immediate              true                   14d
+cinder-tripleo-ceph-nova-xfs   cinder.csi.openstack.org       Delete          Immediate              true                   14d
+cinder-tripleo-nova            cinder.csi.openstack.org       Delete          Immediate              true                   14d
+cinder-tripleo-nova-xfs        cinder.csi.openstack.org       Delete          Immediate              true                   14d
+glusterfs-storageclass         kubernetes.io/glusterfs        Delete          Immediate              true                   14d
+local-storage                  kubernetes.io/no-provisioner   Delete          WaitForFirstConsumer   false                  14d
+[root@udm012-control-02 ~]# 
+```
 
-A PersistentVolume (PV) is a piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned using Storage Classes.
+```yaml
+[root@hpg10ncs-hpg10ncs-masterbm-0 ryliu (Active)]# kubectl get storageclass csi-cephrbd -o yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    meta.helm.sh/release-name: csi-cephrbd
+    meta.helm.sh/release-namespace: ncms
+    storageclass.kubernetes.io/is-default-class: "true"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: csi-cephrbd
+  uid: e6edb2d9-3479-42f5-bab7-1c4ec01f395f
+mountOptions:
+- discard
+parameters:
+  clusterID: 95bd2b65-def9-4874-b69c-a4c5971e9e5c
+  csi.storage.k8s.io/controller-expand-secret-name: csi-cephrbd
+  csi.storage.k8s.io/controller-expand-secret-namespace: ncms
+  csi.storage.k8s.io/fstype: ext4
+  csi.storage.k8s.io/node-stage-secret-name: csi-cephrbd
+  csi.storage.k8s.io/node-stage-secret-namespace: ncms
+  csi.storage.k8s.io/provisioner-secret-name: csi-cephrbd
+  csi.storage.k8s.io/provisioner-secret-namespace: ncms
+  imageFeatures: layering
+  imageFormat: "2"
+  mounter: kernel
+  pool: volumes
+allowVolumeExpansion: true
+provisioner: rbd.csi.ceph.com
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    meta.helm.sh/release-name: csi-cephfs
+    meta.helm.sh/release-namespace: ncms
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: csi-cephfs
+  uid: 5a80c8bb-5333-4fd6-819e-caa9eaa6a9e7
+parameters:
+  clusterID: 95bd2b65-def9-4874-b69c-a4c5971e9e5c
+  csi.storage.k8s.io/controller-expand-secret-name: csi-cephfs
+  csi.storage.k8s.io/controller-expand-secret-namespace: ncms
+  csi.storage.k8s.io/node-stage-secret-name: csi-cephfs
+  csi.storage.k8s.io/node-stage-secret-namespace: ncms
+  csi.storage.k8s.io/provisioner-secret-name: csi-cephfs
+  csi.storage.k8s.io/provisioner-secret-namespace: ncms
+  fsName: cephfs
+  mounter: kernel
+  pool: cephfs_data
+  provisionVolume: "true"
+allowVolumeExpansion: true
+provisioner: cephfs.csi.ceph.com
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+```
 
 # how to find pod volumes
 ```bash
@@ -420,4 +507,318 @@ kubectl get pod -n nokia-imshssa qdlab2-rockylinux-sctp-6d94d7f7bf-2tlhw -o json
 /var/lib/kubelet/pods/<pid>
 
 ```
+
+## glusterfs
+* Find where is your brick
+  ```bash
+  [root@udm012-control-02 ~]# gluster
+  Welcome to gluster prompt, type 'help' to see the available commands.
+  gluster> peer status
+  Number of Peers: 2
+
+  Hostname: udm012-control-01.storage.bcmt
+  Uuid: 425520cd-1872-4992-b2fa-b390c177ecc7
+  State: Peer in Cluster (Connected)
+
+  Hostname: 192.168.155.22
+  Uuid: 6c5e4c97-1005-4cfe-8e5d-04294d88a0b5
+  State: Peer in Cluster (Connected)
+  gluster> 
+  ```
+* 
+
+## local-storage
+```yaml
+[root@udm012-control-01 ~]# kubectl get storageclass local-storage -o yaml 
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+```
+Local volumes do not currently support dynamic provisioning, however a StorageClass should still be created to delay volume binding until Pod scheduling. This is specified by the WaitForFirstConsumer volume binding mode.
+
+Delaying volume binding allows the scheduler to consider all of a Pod's scheduling constraints when choosing an appropriate PersistentVolume for a PersistentVolumeClaim
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  finalizers:
+  - kubernetes.io/pv-protection
+  labels:
+    app: bcmt-cmdb
+    type: local
+  name: cmdb-mysql-udm012-control-02
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: datadir-bcmt-cmdb-mariadb-0
+    namespace: ncms
+    resourceVersion: "6444"
+    uid: de1927af-0c46-409b-ac08-015e5a4efcc2
+  local:
+    path: /data0/cmdb-mysql
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - udm012-control-02
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  volumeMode: Filesystem
+```
+
+# epheramal local storage limitatioin
+
+```golang
+// localStorageEviction checks the EmptyDir volume usage for each pod and determine whether it exceeds the specified limit and needs
+// to be evicted. It also checks every container in the pod, if the container overlay usage exceeds the limit, the pod will be evicted too.
+func (m *managerImpl) localStorageEviction(pods []*v1.Pod, statsFunc statsFunc) []*v1.Pod {
+        evicted := []*v1.Pod{}
+        for _, pod := range pods {
+                podStats, ok := statsFunc(pod)
+                if !ok {
+                        continue
+                }
+
+                if m.emptyDirLimitEviction(podStats, pod) {
+                        evicted = append(evicted, pod)
+                        continue
+                }
+
+                if m.podEphemeralStorageLimitEviction(podStats, pod) {
+                        evicted = append(evicted, pod)
+                        continue
+                }
+
+                if m.containerEphemeralStorageLimitEviction(podStats, pod) {
+                        evicted = append(evicted, pod)
+                }
+        }
+
+        return evicted
+}
+
+func (m *managerImpl) emptyDirLimitEviction(podStats statsapi.PodStats, pod *v1.Pod) bool {
+        podVolumeUsed := make(map[string]*resource.Quantity)
+        for _, volume := range podStats.VolumeStats {
+                podVolumeUsed[volume.Name] = resource.NewQuantity(int64(*volume.UsedBytes), resource.BinarySI)
+        }
+        for i := range pod.Spec.Volumes {
+                source := &pod.Spec.Volumes[i].VolumeSource
+                if source.EmptyDir != nil {
+                        size := source.EmptyDir.SizeLimit
+                        used := podVolumeUsed[pod.Spec.Volumes[i].Name]
+                        if used != nil && size != nil && size.Sign() == 1 && used.Cmp(*size) > 0 {
+                                // the emptyDir usage exceeds the size limit, evict the pod
+                                if m.evictPod(pod, 0, fmt.Sprintf(emptyDirMessageFmt, pod.Spec.Volumes[i].Name, size.String()), nil) {
+                                        metrics.Evictions.WithLabelValues(signalEmptyDirFsLimit).Inc()
+                                        return true
+                                }
+                                return false
+                        }
+                }
+        }
+
+        return false
+}
+
+// Different container runtimes.
+const (
+        DockerContainerRuntime = "docker"
+        RemoteContainerRuntime = "remote"
+)
+
+const (
+        // CrioSocket is the path to the CRI-O socket.
+        // Please keep this in sync with the one in:
+        // github.com/google/cadvisor/tree/master/container/crio/client.go
+        CrioSocket = "/var/run/crio/crio.sock"
+)
+
+
+root       27027       1 19 Jun16 ?        1-04:40:34 /usr/local/bin/kubelet --kubeconfig=/etc/kubernetes/kubelet.kubeconfig --config=/etc/kubernetes/kubelet-config.yml --register-node=true --hostname-override=hpg10ncs-hpg10ncs-masterbm-0 --node-labels=is_control=true,is_worker=false,is_edge=false,is_storage=false,bcmt_storage_node=true,rook_storage=false,rook_storage2=false,cpu_pooler_active=false,dynamic_local_storage_node=false,local_storage_node=false,topology.kubernetes.io/region=hpg10ncs-hpg10ncs,topology.kubernetes.io/zone=zone1 --register-with-taints=is_control=true:NoExecute --node-ip=172.31.7.2 --cloud-provider= --hostname-override=hpg10ncs-hpg10ncs-masterbm-0 --pod-max-pids=4096 --container-runtime=remote --container-runtime-endpoint=unix:///run/containerd/containerd.sock --v=1
+
+// UsingLegacyCadvisorStats returns true if container stats are provided by cadvisor instead of through the CRI.
+// CRI integrations should get container metrics via CRI. Docker
+// uses the built-in cadvisor to gather such metrics on Linux for
+// historical reasons.
+// TODO: cri-o relies on cadvisor as a temporary workaround. The code should
+// be removed. Related issue:
+// https://github.com/kubernetes/kubernetes/issues/51798
+func UsingLegacyCadvisorStats(runtime, runtimeEndpoint string) bool {
+        return (runtime == kubetypes.DockerContainerRuntime && goruntime.GOOS == "linux") ||
+                runtimeEndpoint == CrioSocket || runtimeEndpoint == "unix://"+CrioSocket
+}
+
+        if kubeDeps.useLegacyCadvisorStats {
+                klet.StatsProvider = stats.NewCadvisorStatsProvider(
+                        klet.cadvisor,
+                        klet.resourceAnalyzer,
+                        klet.podManager,
+                        klet.runtimeCache,
+                        klet.containerRuntime,
+                        klet.statusManager,
+                        hostStatsProvider)
+        } else {
+                klet.StatsProvider = stats.NewCRIStatsProvider(
+                        klet.cadvisor,
+                        klet.resourceAnalyzer,
+                        klet.podManager,
+                        klet.runtimeCache,
+                        kubeDeps.RemoteRuntimeService,
+                        kubeDeps.RemoteImageService,
+                        hostStatsProvider,
+                        utilfeature.DefaultFeatureGate.Enabled(features.DisableAcceleratorUsageMetrics),
+                        utilfeature.DefaultFeatureGate.Enabled(features.PodAndContainerStatsFromCRI))
+
+ podStats.EphemeralStorage = calcEphemeralStorage(podStats.Containers, ephemeralStats, &rootFsInfo, logStats, etcHostsStats, false)
+ s.EphemeralStorage = calcEphemeralStorage(s.Containers, ephemeralStats, rootFsInfo, logStats, etcHostsStats, true)
+
+        if stats.WritableLayer != nil {
+                result.Rootfs.Time = metav1.NewTime(time.Unix(0, stats.WritableLayer.Timestamp))
+                if stats.WritableLayer.UsedBytes != nil {
+                        result.Rootfs.UsedBytes = &stats.WritableLayer.UsedBytes.Value
+                }
+                if stats.WritableLayer.InodesUsed != nil {
+                        result.Rootfs.InodesUsed = &stats.WritableLayer.InodesUsed.Value
+                }
+        }
+
+func addContainerUsage(stat *statsapi.FsStats, container *statsapi.ContainerStats, isCRIStatsProvider bool) {
+        if rootFs := container.Rootfs; rootFs != nil {
+                stat.Time = maxUpdateTime(&stat.Time, &rootFs.Time)
+                stat.InodesUsed = addUsage(stat.InodesUsed, rootFs.InodesUsed)
+                stat.UsedBytes = addUsage(stat.UsedBytes, rootFs.UsedBytes)
+                if logs := container.Logs; logs != nil {
+                        stat.UsedBytes = addUsage(stat.UsedBytes, logs.UsedBytes)
+                        // We have accurate container log inode usage for CRI stats provider.
+                        if isCRIStatsProvider {
+                                stat.InodesUsed = addUsage(stat.InodesUsed, logs.InodesUsed)
+                        }
+                        stat.Time = maxUpdateTime(&stat.Time, &logs.Time)
+                }
+        }
+}
+
+
+func calcEphemeralStorage(containers []statsapi.ContainerStats, volumes []statsapi.VolumeStats, rootFsInfo *cadvisorapiv2.FsInfo,
+        podLogStats *statsapi.FsStats, etcHostsStats *statsapi.FsStats, isCRIStatsProvider bool) *statsapi.FsStats {
+        result := &statsapi.FsStats{
+                Time:           metav1.NewTime(rootFsInfo.Timestamp),
+                AvailableBytes: &rootFsInfo.Available,
+                CapacityBytes:  &rootFsInfo.Capacity,
+                InodesFree:     rootFsInfo.InodesFree,
+                Inodes:         rootFsInfo.Inodes,
+        }
+        for _, container := range containers {
+                addContainerUsage(result, &container, isCRIStatsProvider)
+        }
+        for _, volume := range volumes {
+                result.UsedBytes = addUsage(result.UsedBytes, volume.FsStats.UsedBytes)
+                result.InodesUsed = addUsage(result.InodesUsed, volume.InodesUsed)
+                result.Time = maxUpdateTime(&result.Time, &volume.FsStats.Time)
+        }
+        if podLogStats != nil {
+                result.UsedBytes = addUsage(result.UsedBytes, podLogStats.UsedBytes)
+                result.InodesUsed = addUsage(result.InodesUsed, podLogStats.InodesUsed)
+                result.Time = maxUpdateTime(&result.Time, &podLogStats.Time)
+        }
+        if etcHostsStats != nil {
+                result.UsedBytes = addUsage(result.UsedBytes, etcHostsStats.UsedBytes)
+                result.InodesUsed = addUsage(result.InodesUsed, etcHostsStats.InodesUsed)
+                result.Time = maxUpdateTime(&result.Time, &etcHostsStats.Time)
+        }
+        return result
+}
+
+func (m *managerImpl) podEphemeralStorageLimitEviction(podStats statsapi.PodStats, pod *v1.Pod) bool {
+        _, podLimits := apiv1resource.PodRequestsAndLimits(pod)
+        _, found := podLimits[v1.ResourceEphemeralStorage]
+        if !found {
+                return false
+        }
+
+        // pod stats api summarizes ephemeral storage usage (container, emptyDir, host[etc-hosts, logs])
+        podEphemeralStorageTotalUsage := &resource.Quantity{}
+        if podStats.EphemeralStorage != nil && podStats.EphemeralStorage.UsedBytes != nil {
+                podEphemeralStorageTotalUsage = resource.NewQuantity(int64(*podStats.EphemeralStorage.UsedBytes), resource.BinarySI)
+        }
+        podEphemeralStorageLimit := podLimits[v1.ResourceEphemeralStorage]
+        if podEphemeralStorageTotalUsage.Cmp(podEphemeralStorageLimit) > 0 {
+                // the total usage of pod exceeds the total size limit of containers, evict the pod
+                if m.evictPod(pod, 0, fmt.Sprintf(podEphemeralStorageMessageFmt, podEphemeralStorageLimit.String()), nil) {
+                        metrics.Evictions.WithLabelValues(signalEphemeralPodFsLimit).Inc()
+                        return true
+                }
+                return false
+        }
+        return false
+}
+
+func (m *managerImpl) containerEphemeralStorageLimitEviction(podStats statsapi.PodStats, pod *v1.Pod) bool {
+        thresholdsMap := make(map[string]*resource.Quantity)
+        for _, container := range pod.Spec.Containers {
+                ephemeralLimit := container.Resources.Limits.StorageEphemeral()
+                if ephemeralLimit != nil && ephemeralLimit.Value() != 0 {
+                        thresholdsMap[container.Name] = ephemeralLimit
+                }
+        }
+
+        for _, containerStat := range podStats.Containers {
+                containerUsed := diskUsage(containerStat.Logs)
+                if !*m.dedicatedImageFs {
+                        containerUsed.Add(*diskUsage(containerStat.Rootfs))
+                }
+
+                if ephemeralStorageThreshold, ok := thresholdsMap[containerStat.Name]; ok {
+                        if ephemeralStorageThreshold.Cmp(*containerUsed) < 0 {
+                                if m.evictPod(pod, 0, fmt.Sprintf(containerEphemeralStorageMessageFmt, containerStat.Name, ephemeralStorageThreshold.String()), nil) {
+                                        metrics.Evictions.WithLabelValues(signalEphemeralContainerFsLimit).Inc()
+                                        return true
+                                }
+                                return false
+                        }
+                }
+        }
+        return false
+}
+
+```
+
+Test on hsscallp (6 containers)
+
+```yaml
+    resources:
+      limits:
+        cpu: 200m
+        ephemeral-storage: 1G
+        memory: 2000Mi
+      requests:
+        cpu: 200m
+        ephemeral-storage: "0"
+        memory: 2000Mi
+```
+```bash
+cd /logstores
+dd if=/dev/zero of=./test.out bs=1000 count=10000000
+```
+pod evicted
+```
+Warning  Evicted              58s                 kubelet  Pod ephemeral local storage usage exceeds the total limit of containers 6G.
+```
+Above 6G = 6 * 1G.
+Based on above code, podEphermeralStorgeLimitEviction will be checked firstly so above logs printed
+
 
