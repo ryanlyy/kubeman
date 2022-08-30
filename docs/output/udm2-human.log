@@ -1,0 +1,1005 @@
+apps/v1/Deployment udm2-clustermonitoragent                                   💥
+    [CRITICAL] Container Security Context User Group ID
+        · ztsclustermonitoragent -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ztsclustermonitoragent -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udmenvoy -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udmenvoy -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · ztsclustermonitoragent -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udmenvoy -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+    [CRITICAL] Container Image Pull Policy
+        · ztsclustermonitoragent -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udmenvoy -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · ztsclustermonitoragent -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udmenvoy -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+apps/v1/Deployment udm2-http2lb                                               💥
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · http2lb-servicereginit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · http2lb-http2lb -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udmenvoy -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · http2lb-mcc -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · http2lb-mgmt -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · http2lb-admin -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+    [CRITICAL] Container Image Pull Policy
+        · http2lb-servicereginit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · http2lb-http2lb -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udmenvoy -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · http2lb-mcc -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · http2lb-mgmt -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · http2lb-admin -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Security Context User Group ID
+        · http2lb-servicereginit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · http2lb-servicereginit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · http2lb-http2lb -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · http2lb-http2lb -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udmenvoy -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udmenvoy -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · http2lb-mcc -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · http2lb-mcc -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · http2lb-mgmt -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · http2lb-mgmt -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · http2lb-admin -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · http2lb-admin -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · http2lb-servicereginit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · http2lb-http2lb -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udmenvoy -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · http2lb-mcc -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · http2lb-mgmt -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · http2lb-admin -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+    [OK] Pod Probes
+        · Container is missing a livenessProbe
+            A livenessProbe can be used to restart the container if it's deadlocked or has crashed without exiting. It's only recommended to setup a livenessProbe if you really need one.
+            More information: https://github.com/zegl/kube-score/blob/master/README_PROBES.md
+apps/v1/Deployment udm2-ausfauth in udm2                                      💥
+    [CRITICAL] Container Security Context User Group ID
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ueauthn-mcc -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ueauthn-mcc -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ueauth-cip -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ueauth-cip -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ueauth-ueauth -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ueauth-ueauth -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ueauthn-h2p -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ueauthn-h2p -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udmenvoy -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udmenvoy -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ueauthn-admin -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ueauthn-admin -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · ueauthn-mcc -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udmenvoy -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · ueauthn-admin -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+    [CRITICAL] Container Image Pull Policy
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ueauthn-mcc -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ueauth-cip -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ueauth-ueauth -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ueauthn-h2p -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udmenvoy -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ueauthn-admin -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ueauthn-mcc -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ueauth-cip -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ueauth-ueauth -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ueauthn-h2p -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udmenvoy -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ueauthn-admin -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+apps/v1/Deployment udm2-udmarpf in udm2                                       💥
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+    [CRITICAL] Container Image Pull Policy
+        · softac -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · arpf-mcc -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · arpf-cip -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · arpf-arpf -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udmenvoy -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · arpf-admin -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · softac -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · arpf-mcc -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · arpf-cip -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · arpf-arpf -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udmenvoy -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · arpf-admin -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · softac -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · arpf-mcc -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · arpf-cip -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · arpf-arpf -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udmenvoy -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · arpf-admin -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+    [OK] Pod Probes
+        · Container is missing a livenessProbe
+            A livenessProbe can be used to restart the container if it's deadlocked or has crashed without exiting. It's only recommended to setup a livenessProbe if you really need one.
+            More information: https://github.com/zegl/kube-score/blob/master/README_PROBES.md
+    [CRITICAL] Container Security Context User Group ID
+        · softac -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · softac -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · arpf-mcc -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · arpf-mcc -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · arpf-cip -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · arpf-cip -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · arpf-arpf -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · arpf-arpf -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udmenvoy -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udmenvoy -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · arpf-admin -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · arpf-admin -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Deployment has PodDisruptionBudget
+        · No matching PodDisruptionBudget was found
+            It's recommended to define a PodDisruptionBudget to avoid unexpected downtime during Kubernetes maintenance operations, such as when draining a node.
+apps/v1/Deployment udm2-udmee in udm2                                         💥
+    [CRITICAL] Container Security Context User Group ID
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ee-mcc -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ee-mcc -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ee-cip -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ee-cip -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ee-ee -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ee-ee -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ee-h2p -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ee-h2p -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udmenvoy -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udmenvoy -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ee-admin -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ee-admin -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · ee-mcc -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udmenvoy -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · ee-admin -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+    [CRITICAL] Container Image Pull Policy
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ee-mcc -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ee-cip -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ee-ee -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ee-h2p -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udmenvoy -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ee-admin -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ee-mcc -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ee-cip -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ee-ee -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ee-h2p -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udmenvoy -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ee-admin -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+apps/v1/Deployment udm2-udmmt in udm2                                         💥
+    [CRITICAL] Container Image Pull Policy
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · mt-mcc -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · mt-cip -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · mt-mt -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udmenvoy -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · mt-admin -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · mt-mcc -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · mt-cip -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · mt-mt -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udmenvoy -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · mt-admin -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+    [OK] Pod Probes
+        · Container is missing a livenessProbe
+            A livenessProbe can be used to restart the container if it's deadlocked or has crashed without exiting. It's only recommended to setup a livenessProbe if you really need one.
+            More information: https://github.com/zegl/kube-score/blob/master/README_PROBES.md
+    [CRITICAL] Container Security Context User Group ID
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · mt-mcc -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · mt-mcc -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · mt-cip -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · mt-cip -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · mt-mt -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · mt-mt -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udmenvoy -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udmenvoy -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · mt-admin -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · mt-admin -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · mt-mcc -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · mt-cip -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · mt-mt -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udmenvoy -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · mt-admin -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+apps/v1/Deployment udm2-udmnim in udm2                                        💥
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+    [CRITICAL] Container Image Pull Policy
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · nim-mcc -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · nim-cip -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · nim-nim -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · nim-h2p -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udmenvoy -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · nim-admin -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · leader-elector -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · nim-mcc -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · nim-cip -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · nim-nim -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · nim-h2p -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udmenvoy -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · nim-admin -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · leader-elector -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · nim-mcc -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udmenvoy -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · nim-admin -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · leader-elector -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+    [CRITICAL] Container Security Context User Group ID
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · nim-mcc -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · nim-mcc -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · nim-cip -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · nim-cip -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · nim-nim -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · nim-nim -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · nim-h2p -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · nim-h2p -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udmenvoy -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udmenvoy -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · nim-admin -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · nim-admin -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · leader-elector -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · leader-elector -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Deployment has PodDisruptionBudget
+        · No matching PodDisruptionBudget was found
+            It's recommended to define a PodDisruptionBudget to avoid unexpected downtime during Kubernetes maintenance operations, such as when draining a node.
+apps/v1/Deployment udm2-udmsdm in udm2                                        💥
+    [CRITICAL] Container Image Pull Policy
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · sdm-mcc -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · sdm-cip -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · sdm-sdm -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · sdm-h2p -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udmenvoy -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · sdm-admin -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · sdm-mcc -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · sdm-cip -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · sdm-sdm -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · sdm-h2p -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udmenvoy -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · sdm-admin -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+    [OK] Pod Probes
+        · Container is missing a livenessProbe
+            A livenessProbe can be used to restart the container if it's deadlocked or has crashed without exiting. It's only recommended to setup a livenessProbe if you really need one.
+            More information: https://github.com/zegl/kube-score/blob/master/README_PROBES.md
+    [CRITICAL] Container Security Context User Group ID
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · sdm-mcc -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · sdm-mcc -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · sdm-cip -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · sdm-cip -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · sdm-sdm -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · sdm-sdm -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · sdm-h2p -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · sdm-h2p -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udmenvoy -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udmenvoy -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · sdm-admin -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · sdm-admin -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · sdm-mcc -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udmenvoy -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · sdm-admin -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+apps/v1/Deployment udm2-udmsim in udm2                                        💥
+    [CRITICAL] Container Security Context User Group ID
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · sim-mcc -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · sim-mcc -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · sim-cip -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · sim-cip -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · sim-transporter -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · sim-transporter -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · sim-xix -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · sim-xix -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udmenvoy -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udmenvoy -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · sim-admin -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · sim-admin -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · sim-mcc -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · sim-transporter -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · sim-xix -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udmenvoy -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · sim-admin -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+    [CRITICAL] Container Image Pull Policy
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · sim-mcc -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · sim-cip -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · sim-transporter -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · sim-xix -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udmenvoy -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · sim-admin -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · sim-mcc -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · sim-cip -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · sim-transporter -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · sim-xix -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udmenvoy -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · sim-admin -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+    [CRITICAL] Deployment has PodDisruptionBudget
+        · No matching PodDisruptionBudget was found
+            It's recommended to define a PodDisruptionBudget to avoid unexpected downtime during Kubernetes maintenance operations, such as when draining a node.
+apps/v1/Deployment udm2-udmtrigger in udm2                                    💥
+    [CRITICAL] Container Image Pull Policy
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · trigger-mcc -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · trigger -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udmenvoy -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · trigger-admin -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · trigger-mcc -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · trigger -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udmenvoy -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · trigger-admin -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+    [CRITICAL] Container Security Context User Group ID
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · trigger-mcc -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · trigger-mcc -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · trigger -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · trigger -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udmenvoy -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udmenvoy -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · trigger-admin -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · trigger-admin -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · trigger-mcc -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · trigger -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udmenvoy -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · trigger-admin -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+    [CRITICAL] Deployment has PodDisruptionBudget
+        · No matching PodDisruptionBudget was found
+            It's recommended to define a PodDisruptionBudget to avoid unexpected downtime during Kubernetes maintenance operations, such as when draining a node.
+apps/v1/Deployment udm2-udmueau in udm2                                       💥
+    [CRITICAL] Container Image Pull Policy
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ueauthn-mcc -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ueauth-cip -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ueauth-ueauth -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ueauthn-h2p -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udmenvoy -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · ueauthn-admin -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ueauthn-mcc -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ueauth-cip -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ueauth-ueauth -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ueauthn-h2p -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udmenvoy -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · ueauthn-admin -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+    [CRITICAL] Container Security Context User Group ID
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ueauthn-mcc -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ueauthn-mcc -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ueauth-cip -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ueauth-cip -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ueauth-ueauth -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ueauth-ueauth -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ueauthn-h2p -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ueauthn-h2p -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udmenvoy -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udmenvoy -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · ueauthn-admin -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · ueauthn-admin -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · ueauthn-mcc -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udmenvoy -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · ueauthn-admin -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+apps/v1/Deployment udm2-udmuecm in udm2                                       💥
+    [OK] Pod Probes
+        · Container is missing a livenessProbe
+            A livenessProbe can be used to restart the container if it's deadlocked or has crashed without exiting. It's only recommended to setup a livenessProbe if you really need one.
+            More information: https://github.com/zegl/kube-score/blob/master/README_PROBES.md
+    [CRITICAL] Container Security Context User Group ID
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · uecm-mcc -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · uecm-mcc -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · uecm-cip -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · uecm-cip -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · uecm-uecm -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · uecm-uecm -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · uecm-h2p -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · uecm-h2p -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udmenvoy -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udmenvoy -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · uecm-admin -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · uecm-admin -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · uecm-mcc -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udmenvoy -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · uecm-admin -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+    [CRITICAL] Container Image Pull Policy
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · uecm-mcc -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · uecm-cip -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · uecm-uecm -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · uecm-h2p -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udmenvoy -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · uecm-admin -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · uecm-mcc -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · uecm-cip -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · uecm-uecm -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · uecm-h2p -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udmenvoy -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · uecm-admin -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+apps/v1/Deployment udm2-vnfclusterenvoylb in udm2                             💥
+    [CRITICAL] Container Image Pull Policy
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · vnfenvoylb -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · vnfenvoylb -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+    [OK] Pod Probes
+        · Container is missing a livenessProbe
+            A livenessProbe can be used to restart the container if it's deadlocked or has crashed without exiting. It's only recommended to setup a livenessProbe if you really need one.
+            More information: https://github.com/zegl/kube-score/blob/master/README_PROBES.md
+    [CRITICAL] Container Security Context User Group ID
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · vnfenvoylb -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · vnfenvoylb -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · vnfenvoylb -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+    [CRITICAL] Deployment has PodDisruptionBudget
+        · No matching PodDisruptionBudget was found
+            It's recommended to define a PodDisruptionBudget to avoid unexpected downtime during Kubernetes maintenance operations, such as when draining a node.
+policy/v1/PodDisruptionBudget udm2-ausfauth                                   ✅
+policy/v1/PodDisruptionBudget udm2-ccasapache                                 ✅
+policy/v1/PodDisruptionBudget udm2-clustermonitoragent                        ✅
+policy/v1/PodDisruptionBudget udm2-http2lb                                    ✅
+policy/v1/PodDisruptionBudget udm2-udmarpf                                    ✅
+policy/v1/PodDisruptionBudget udm2-udmee                                      ✅
+policy/v1/PodDisruptionBudget udm2-udmmt                                      ✅
+policy/v1/PodDisruptionBudget udm2-udmnim                                     ✅
+policy/v1/PodDisruptionBudget udm2-udmsdm                                     ✅
+policy/v1/PodDisruptionBudget udm2-udmsim                                     ✅
+policy/v1/PodDisruptionBudget udm2-udmtrigger                                 ✅
+policy/v1/PodDisruptionBudget udm2-udmueau                                    ✅
+policy/v1/PodDisruptionBudget udm2-udmuecm                                    ✅
+policy/v1/PodDisruptionBudget udm2-vnfclusterenvoylb                          ✅
+v1/Service http2lb                                                            ✅
+v1/Service lag                                                                💥
+    [CRITICAL] Service Targets Pod
+        · The services selector does not match any pods
+v1/Service nausf-auth                                                         💥
+    [CRITICAL] Service Targets Pod
+        · The services selector does not match any pods
+v1/Service nim                                                                💥
+    [CRITICAL] Service Targets Pod
+        · The services selector does not match any pods
+v1/Service nudm-ee                                                            💥
+    [CRITICAL] Service Targets Pod
+        · The services selector does not match any pods
+v1/Service nudm-ueau                                                          💥
+    [CRITICAL] Service Targets Pod
+        · The services selector does not match any pods
+v1/Service sim                                                                💥
+    [CRITICAL] Service Targets Pod
+        · The services selector does not match any pods
+v1/Service trigger                                                            💥
+    [CRITICAL] Service Targets Pod
+        · The services selector does not match any pods
+v1/Service udm2-ccasapache                                                    ✅
+v1/Service arpf in udm2                                                       ✅
+v1/Service nudm-mt in udm2                                                    ✅
+v1/Service nudm-sdm in udm2                                                   ✅
+v1/Service nudm-uecm in udm2                                                  ✅
+v1/Service vnfclusterenvoylb-service in udm2                                  ✅
+apps/v1/StatefulSet udm2-ccasapache                                           💥
+    [OK] Pod Probes
+        · Container is missing a livenessProbe
+            A livenessProbe can be used to restart the container if it's deadlocked or has crashed without exiting. It's only recommended to setup a livenessProbe if you really need one.
+            More information: https://github.com/zegl/kube-score/blob/master/README_PROBES.md
+    [CRITICAL] Container Security Context User Group ID
+        · udm2-ccasapache-config -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udm2-ccasapache-config -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udm2-ccasapache -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udm2-ccasapache -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · udmenvoy -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · udmenvoy -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+        · fluent-bit -> The container is running with a low user ID
+            A userid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsUser to a value > 10000
+        · fluent-bit -> The container running with a low group ID
+            A groupid above 10 000 is recommended to avoid conflicts with the host. Set securityContext.runAsGroup to a value > 10000
+    [CRITICAL] Container Security Context ReadOnlyRootFilesystem
+        · udm2-ccasapache-config -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udm2-ccasapache -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · udmenvoy -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+        · fluent-bit -> Container has no configured security context
+            Set securityContext to run the container in a more secure context.
+    [CRITICAL] Container Image Pull Policy
+        · udm2-ccasapache-config -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udm2-ccasapache -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · udmenvoy -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+        · fluent-bit -> ImagePullPolicy is not set to Always
+            It's recommended to always set the ImagePullPolicy to Always, to make sure that the imagePullSecrets are always correct, and to always get the image you want.
+    [CRITICAL] Container Ephemeral Storage Request and Limit
+        · udm2-ccasapache-config -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udm2-ccasapache -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · udmenvoy -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+        · fluent-bit -> Ephemeral Storage limit is not set
+            Resource limits are recommended to avoid resource DDOS. Set resources.limits.ephemeral-storage
+    [CRITICAL] Pod NetworkPolicy
+        · The pod does not have a matching NetworkPolicy
+            Create a NetworkPolicy that targets this pod to control who/what can communicate with this pod. Note, this feature needs to be supported by the CNI implementation used in the Kubernetes cluster to have an effect.
+    [WARNING] StatefulSet has host PodAntiAffinity
+        · StatefulSet does not have a host podAntiAffinity set
+            It's recommended to set a podAntiAffinity that stops multiple pods from a statefulset from being scheduled on the same node. This increases availability in case the node becomes unavailable.
+    [CRITICAL] StatefulSet has ServiceName
+        · StatefulSet does not have a valid serviceName
+            StatefulSets currently require a Headless Service to be responsible for the network identity of the Pods. You are responsible for creating this Service. https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#limitations
