@@ -1,6 +1,10 @@
 Scheduling Preemption and Eviction
 ---
 
+- [Resource Manager and Controller](#resource-manager-and-controller)
+  - [CPU Manager](#cpu-manager)
+  - [Memory Manager](#memory-manager)
+  - [topology-manager](#topology-manager)
 - [Kubernetes Scheduler](#kubernetes-scheduler)
 - [Assigning Pods to Nodes](#assigning-pods-to-nodes)
   - [NodeSelector](#nodeselector)
@@ -24,6 +28,27 @@ Scheduling Preemption and Eviction
 
 https://kubernetes.io/docs/concepts/scheduling-eviction/
 
+
+# Resource Manager and Controller
+## CPU Manager
+Kubernetes v1.12 [beta]
+
+## Memory Manager
+Kubernetes v1.22 [beta]
+
+The Memory Manager is a Hint Provider, and it provides topology hints for the Topology Manager which then aligns the requested resources according to these topology hints. It also enforces cgroups (i.e. cpuset.mems) for pods
+
+The administrator must provide reserved-memory when Static policy is configured in KubeletConfiguration
+* MemoryManager: true|false
+* memoryManagerPolicy: static|none 
+* reservedMemory: 
+  * - numaNode: 0
+  *   limit:
+  *     memory:
+  *   request:
+  *     memory:
+## topology-manager
+Kubernetes v1.18 [beta]
 
 # Kubernetes Scheduler
 # Assigning Pods to Nodes

@@ -1,6 +1,11 @@
 This page includes some debugging cmd used in envoy 
 ---
 
+- [How to find admin port](#how-to-find-admin-port)
+- [How to show debug cmd help](#how-to-show-debug-cmd-help)
+- [How to dump envoy running configuration](#how-to-dump-envoy-running-configuration)
+- [How to enable log trace](#how-to-enable-log-trace)
+- [How to print counter](#how-to-print-counter)
 
 # How to find admin port
 ```yaml
