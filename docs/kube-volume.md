@@ -19,6 +19,11 @@ This page is related with volumes
   - [glusterfs](#glusterfs)
   - [local-storage](#local-storage)
 - [epheramal local storage limitatioin](#epheramal-local-storage-limitatioin)
+- [Lifecycle of volumes and claims](#lifecycle-of-volumes-and-claims)
+  - [Provisioning](#provisioning)
+    - [static](#static)
+    - [dynamic](#dynamic)
+  - [persistentVolumeClaimRetentionPolicy (StatefulSetPersistentVolumeClaimRetentionPolicy)](#persistentvolumeclaimretentionpolicy-statefulsetpersistentvolumeclaimretentionpolicy)
 
 
 
@@ -822,3 +827,23 @@ Above 6G = 6 * 1G.
 Based on above code, podEphermeralStorgeLimitEviction will be checked firstly so above logs printed
 
 
+# Lifecycle of volumes and claims
+## Provisioning
+### static
+A cluster administrator creates a number of PVs. They carry the details of the real storage, which is available for use by cluster users
+### dynamic
+When none of the static PVs the administrator created match a user's PersistentVolumeClaim, the cluster may try to dynamically provision a volume specially for the PVC
+
+## persistentVolumeClaimRetentionPolicy (StatefulSetPersistentVolumeClaimRetentionPolicy)
+
+persistentVolumeClaimRetentionPolicy describes the lifecycle of persistent volume claims created from volumeClaimTemplates. **By default, all persistent volume claims are created as needed and retained until manually deleted.** This policy allows the lifecycle to be altered, for example by deleting persistent volume claims when their stateful set is deleted, or when their pod is scaled down. This requires the StatefulSetAutoDeletePVC feature gate to be enabled, which is alpha. +optional
+
+StatefulSetPersistentVolumeClaimRetentionPolicy describes the policy used for PVCs created from the StatefulSet VolumeClaimTemplates.
+
+    persistentVolumeClaimRetentionPolicy.whenDeleted (string)
+
+    WhenDeleted specifies what happens to PVCs created from StatefulSet VolumeClaimTemplates when the StatefulSet is deleted. The default policy of Retain causes PVCs to not be affected by StatefulSet deletion. The Delete policy causes those PVCs to be deleted.
+
+    persistentVolumeClaimRetentionPolicy.whenScaled (string)
+
+    WhenScaled specifies what happens to PVCs created from StatefulSet VolumeClaimTemplates when the StatefulSet is scaled down. The default policy of Retain causes PVCs to not be affected by a scaledown. The Delete policy causes the associated PVCs for any excess pods above the replica count to be deleted.

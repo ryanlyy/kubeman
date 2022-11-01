@@ -1,6 +1,7 @@
 Kuberntes Tips
 ---
 
+- [How to get pod name](#how-to-get-pod-name)
 - [How to set Kubernetes Resource Namespace](#how-to-set-kubernetes-resource-namespace)
 - [How to rejoin node](#how-to-rejoin-node)
 - [How to list supported kubernetes versions](#how-to-list-supported-kubernetes-versions)
@@ -14,6 +15,12 @@ Kuberntes Tips
 - [Which kubeconfig shall be used by kubectl](#which-kubeconfig-shall-be-used-by-kubectl)
 - [namespace configured in manifest has high priority than value specified in helm install](#namespace-configured-in-manifest-has-high-priority-than-value-specified-in-helm-install)
 
+# How to get pod name
+```bash
+kubectl get pod -n zts -l "app=cmcontroller"
+kubectl get pods  -o custom-columns=":metadata.name" -n zts -l "app=cmcontroller"
+kubectl get pods --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}' -l "app=cmcontroller" -n zts
+```
 # How to set Kubernetes Resource Namespace
 * helm -n <ns>
 * kubectl -n <ns>
