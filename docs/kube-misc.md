@@ -1,6 +1,7 @@
 Kuberntes Tips
 ---
 
+- [podman started container log location](#podman-started-container-log-location)
 - [How to get pod name](#how-to-get-pod-name)
 - [How to set Kubernetes Resource Namespace](#how-to-set-kubernetes-resource-namespace)
 - [How to rejoin node](#how-to-rejoin-node)
@@ -14,6 +15,11 @@ Kuberntes Tips
 - [Default mount volume when creating pod in kube 1.21](#default-mount-volume-when-creating-pod-in-kube-121)
 - [Which kubeconfig shall be used by kubectl](#which-kubeconfig-shall-be-used-by-kubectl)
 - [namespace configured in manifest has high priority than value specified in helm install](#namespace-configured-in-manifest-has-high-priority-than-value-specified-in-helm-install)
+
+# podman started container log location
+for example: kube-apiserver
+
+/data0/podman/storage/overlay-containers/$(podman ps --no-trunc | grep apiserver| awk '{ print $1 }')/userdata/ctr.log
 
 # How to get pod name
 ```bash

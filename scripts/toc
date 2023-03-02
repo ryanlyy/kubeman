@@ -19,14 +19,39 @@ function go2cont
 	PS3="Enter a pod index: "
 }
 
-typeset -A POD_LIST=$(kubectl get pod -n $NAMESPACE | grep -v NAME | awk '{ print $1 }'| tr -s "\n" " ")
-PS3="Enter a pod index: "
-select POD in ${POD_LIST[*]}
-do
-	#echo "podidx $REPLY; POD is $POD"
-	if [[ $POD != ""  ]]; then 
-		go2cont ${POD}
-	else
-		break;
-	fi
-done
+function go2ns
+{
+	NS_NAME=$1
+	typeset -A POD_LIST=$(kubectl get pod -n $NS_NAME| grep -v NAME | awk '{ print $1 }'| tr -s "\n" " ")
+	PS3="Enter a pod index: "
+	select POD in ${POD_LIST[*]}
+	do
+		#echo "podidx $REPLY; POD is $POD"
+		if [[ $POD != ""  ]]; then 
+			go2cont ${POD}
+		else
+			break;
+		fi
+	done
+	PS3="Enter a namespace index: "
+}
+
+function lsns
+{
+	typeset -A NS_LIST=$(kubectl get ns | awk '{ print $1 }' | grep -v NAME)
+	PS3="Enter a namespace index: "
+	select  NS in ${NS_LIST[*]}
+	do
+		if [[ $NS != "" ]]; then
+			go2ns $NS
+		else
+			break;
+		fi
+	done
+}
+
+if [[ $NAMESPACE != "" ]]; then
+	go2ns $NAMESPACE
+else
+	lsns
+fi
