@@ -1,0 +1,79 @@
+[root@hpg10ncs-hpg10ncs-edgebm-1 ~]# cat selinux.output 
+boolean -D
+login -D
+interface -D
+user -D
+port -D
+node -D
+fcontext -D
+module -D
+ibendport -D
+ibpkey -D
+boolean -m -1 collectd_tcp_network_connect
+boolean -m -1 daemons_enable_cluster_mode
+boolean -m -1 domain_can_mmap_files
+boolean -m -1 domain_kernel_load_modules
+boolean -m -1 fenced_can_network_connect
+boolean -m -1 fenced_can_ssh
+boolean -m -1 glance_api_can_network
+boolean -m -1 glance_use_execmem
+boolean -m -1 glance_use_fusefs
+boolean -m -1 haproxy_connect_any
+boolean -m -1 httpd_can_network_connect
+boolean -m -1 httpd_execmem
+boolean -m -1 httpd_use_openstack
+boolean -m -1 neutron_can_network
+boolean -m -1 nis_enabled
+boolean -m -1 os_cinder_use_nfs
+boolean -m -1 os_glance_use_nfs
+boolean -m -1 os_glance_use_sudo
+boolean -m -1 os_gnocchi_use_nfs
+boolean -m -1 os_httpd_wsgi
+boolean -m -1 os_keystone_use_execmem
+boolean -m -1 os_neutron_use_execmem
+boolean -m -1 os_nova_use_execmem
+boolean -m -1 os_swift_use_execmem
+boolean -m -1 os_virtlogd_use_nfs
+boolean -m -1 rsync_client
+boolean -m -1 rsync_full_access
+boolean -m -1 swift_can_network
+boolean -m -1 virt_use_execmem
+boolean -m -1 virt_use_fusefs
+boolean -m -1 virt_use_nfs
+port -a -t mysqld_port_t -r 's0' -p tcp 4444
+port -a -t mysqld_port_t -r 's0' -p udp 4567
+port -a -t mysqld_port_t -r 's0' -p tcp 4568
+port -a -t ovsdb_port_t -r 's0' -p tcp 6639
+port -a -t ovsdb_port_t -r 's0' -p tcp 6641
+port -a -t ovsdb_port_t -r 's0' -p tcp 6642
+port -a -t openvswitch_port_t -r 's0' -p tcp 6653
+port -a -t http_port_t -r 's0' -p tcp 8000
+port -a -t http_port_t -r 's0' -p tcp 8088
+fcontext -a -f a -t named_zone_t -r 's0' '/var/lib/designate/bind9(/.*)?'
+fcontext -a -f a -t virt_cache_t -r 's0' '/var/lib/vhost_sockets(/.*)?'
+fcontext -a -f a -t httpd_var_lib_t -r 's0' '/var/lib/openstack-dashboard'
+fcontext -a -f a -t mongod_var_lib_t -r 's0' '/var/lib/mongodb(/.*)?'
+fcontext -a -f a -t httpd_log_t -r 's0' '/var/log/gnocchi/app.log'
+fcontext -a -f a -t httpd_log_t -r 's0' '/var/log/aodh/app.log'
+fcontext -a -f a -t httpd_log_t -r 's0' '/var/log/ceilometer/app.log'
+fcontext -a -f a -t httpd_log_t -r 's0' '/var/log/panko/app.log'
+fcontext -a -f a -t httpd_log_t -r 's0' '/var/log/zaqar/zaqar.log'
+fcontext -a -f a -t neutron_exec_t -r 's0' '/usr/bin/neutron-rootwrap-daemon'
+fcontext -a -f a -t neutron_exec_t -r 's0' '/usr/bin/neutron-vpn-agent'
+fcontext -a -f a -t swift_var_cache_t -r 's0' '/var/cache/swift(/.*)'
+fcontext -a -f a -t swift_exec_t -r 's0' '/usr/bin/swift-object-reconstructor'
+fcontext -a -f a -t swift_exec_t -r 's0' '/usr/bin/swift-object-relinker'
+fcontext -a -f a -t httpd_sys_content_t -r 's0' '/httpboot(/.*)?'
+fcontext -a -f a -t ssh_home_t -r 's0' '/var/lib/nova/.ssh(/.*)?'
+fcontext -a -f a -t tftpdir_t -r 's0' '/tftpboot(/.*)?'
+fcontext -a -f a -t container_file_t -r 's0' '/var/lib/tripleo-config(/.*)?'
+fcontext -a -f a -t container_file_t -r 's0' '/var/lib/config-data(/.*)?'
+fcontext -a -f a -t cluster_var_log_t -r 's0' '/var/log/pacemaker.log.*'
+fcontext -a -f a -t container_file_t -r 's0' '/var/lib/kolla(/.*)?'
+fcontext -a -f a -t cluster_var_log_t -r 's0' '/var/log/pacemaker(/.*)?'
+fcontext -a -f a -t container_file_t -r 's0' '/var/log/containers(/.*)?'
+fcontext -a -f a -t container_share_t -r 's0' '/data0(/.*)?'
+fcontext -a -f a -t container_file_t -r 's0' '/data0/containers/storage(/.*)?'
+fcontext -a -f a -t container_file_t -r 's0' '/data0/podman/storage(/.*)?'
+fcontext -a -e / /opt/rh/devtoolset-7/root
+[root@hpg10ncs-hpg10ncs-edgebm-1 ~]# 
