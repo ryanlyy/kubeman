@@ -87,6 +87,28 @@ SELINUXTYPE=targeted
 
 ## semanage tool
 ```bash
+[root@hpg10ncs-hpg10ncs-edgebm-1 ~]# rpm -ql libselinux-utils-2.5-15.el7.x86_64
+/usr/sbin/avcstat
+/usr/sbin/getenforce
+/usr/sbin/getsebool
+/usr/sbin/matchpathcon
+/usr/sbin/selabel_digest
+/usr/sbin/selabel_lookup
+/usr/sbin/selabel_lookup_best_match
+/usr/sbin/selabel_partial_match
+/usr/sbin/selinux_restorecon
+/usr/sbin/selinuxconlist
+/usr/sbin/selinuxdefcon
+/usr/sbin/selinuxenabled
+/usr/sbin/selinuxexeccon
+/usr/sbin/setenforce
+
+rpm -ql policycoreutils-python-2.5-34.el7.x86_64
+/usr/sbin/semanage
+/usr/share/bash-completion/completions/semanage
+/usr/share/bash-completion/completions/setsebool
+```
+```bash
 [root@hpg10ncs-hpg10ncs-edgebm-1 sbin]# semanage --help
 usage: semanage [-h]
                 
