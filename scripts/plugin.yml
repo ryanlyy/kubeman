@@ -1,0 +1,761 @@
+plugin:
+  lsresource-deployment:
+    shortCut: x
+    confirm: false
+    description: "reg-lsresource-deployment"
+    scopes:
+      - deployment
+    command: bash
+    background: false
+    args:
+      - -c
+      - |
+        kubectl get deployment -n $NAMESPACE -o jsonpath='{range .items[*]}{"#########  "}{"Deployment"}{" "}{@.metadata.name}{"  ##########"}{"\n"}{"Container	CPU(Limit/Request)	MEM(Limit/Request)	Storage(limit/Request)	Image"}{"\n"}{range @.spec.template.spec.containers[*]} {@.name}{"\t"}{@.resources.limits.cpu}{"/"}{@.resources.requests.cpu}{"\t\t"}{@.resources.limits.memory}{"/"}{@.resources.requests.memory}{"\t\t"}{@.resources.limits.ephemeral-storage}{"/"}{@.resources.requests.ephemeral-storage}{"\t\t"}{@.image}{"\n"}{end}{"\n"}{end}'
+        read -n1 -s 
+
+  chk-disk:
+    shortCut: g
+    confirm: false 
+    description: "z-chk-disk"
+    scopes:
+      - helm 
+    command: bash 
+    background: false
+    args:
+      - -c  
+      - |
+        tmp=$(hostname)
+        PREFIX=${tmp%?}
+        SUFFIX=${tmp: -1}
+        NODE2=${PREFIX}$((SUFFIX+1))        
+        NODE3=${PREFIX}$((SUFFIX+2))        
+        
+        echo -e "\033[36m>>> Check if id_rsa.pub exists on ${tmp}, generate it if not"
+        if [ ! -f ~/.ssh/id_rsa.pub ]; then
+           echo "               There is no ~/.ssh/id_rsa then generate"
+           ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+        fi
+        
+        
+        function check_pubkey(){
+          # Get local public key
+          local_pubkey=$(cat ~/.ssh/id_rsa.pub)
+        
+          echo -e "\033[36m>>> Check if remote host $1 already has the public key"
+          ssh -q $1 "grep -q \"$local_pubkey\" ~/.ssh/authorized_keys"
+        
+          if [ $? -eq 0 ]; then
+            echo "               Public key already exists on remote host $1"
+          else
+            echo "               Copying public key to remote host $1"
+            ssh-copy-id -f $1
+          fi 
+        }
+        check_pubkey $NODE2
+        check_pubkey $NODE3
+
+        echo -e  "\033[36m\033[36m#################### CHECK BCMT STORAGE ######################\033[0m"
+        df -h /opt/bcmt/storage
+        echo -e ""
+        echo -e ""
+        echo -e "\033[36m#################### CHECK LOCAL STORAGE #####################\033[0m"
+        echo -e "\033[36m>> Check $(hostname) \033[0m"
+        df -h /data0
+        echo -e ""
+        echo -e "\033[36m>> Check ${NODE2} \033[0m"
+        ssh -q ${NODE2} "df -h /data0"
+        echo -e ""
+        echo -e "\033[36m>> Check ${NODE3} \033[0m"
+        ssh -q ${NODE3} "df -h /data0"
+        echo -e "\033[36m>>> Press Any key to exit\033[0m"
+        read -n1 -s 
+
+
+  cm-info:
+    shortCut: z
+    confirm: false 
+    description: "z-cm-info"
+    scopes:
+      - po
+    command: bash 
+    background: false
+    args:
+      - -c  
+      - |
+        echo -e  "\033[36m#################### DUMP CM Server Info ######################\033[0m"
+        CMCTL=$(kubectl get pod -n $NAMESPACE|grep cmc|awk '{print $1}')        
+        kubectl exec -it $CMCTL -n $NAMESPACE -- cmcli getctrlinfo 
+        echo -e "\033[36m>>> Press Any key to exit\033[0m"
+        read -n1 -s 
+
+  cm-config:
+    shortCut: x
+    confirm: false 
+    description: "z-dump-cm"
+    scopes:
+      - pod 
+    command: bash 
+    background: false
+    args:
+      - -c  
+      - |
+        echo -e  "\033[36m#################### DUMP CM Config Data ######################\033[0m"
+        echo -e "\033[36m>>> Please enter CM username:\033[0m"
+        read CMUSER 
+        FILE=/tmp/cmconfig.$NAMESPACE.$NAME_`date +%m%d%H%M`
+        echo "####### Please check cm config #######">$FILE
+        echo "">>$FILE
+        kubectl exec -it $NAME -n $NAMESPACE  -- ssh -q ${CMUSER}@127.0.0.1 -p 2024 "show running-config" |tee -a $FILE
+        vi $FILE
+        echo -e "\033[36m>>> Please check cm config dump file: \033[0m"
+        echo -e "\033[32m$FILE\033[0m"
+        echo -e "\033[36m>>> Press Any key to exit\033[0m"
+        read -n1 -s 
+
+  config-cm:
+    shortCut: u
+    confirm: false 
+    description: "z-config-cm"
+    scopes:
+      - pod 
+    command: bash 
+    background: false
+    args:
+      - -c  
+      - |
+        echo -e  "\033[36m#################### DUMP CM Config Data ######################\033[0m"
+        echo -e "\033[36m>>> Please enter CM username:\033[0m"
+        read CMUSER 
+        FILE=/tmp/cmconfig.$NAMESPACE.$NAME_`date +%m%d%H%M`
+        kubectl exec -it $NAME -n $NAMESPACE  -- bash -c "ssh -q -it ${CMUSER}@127.0.0.1 -p 2024 " 
+        echo -e "\033[36m>>> Press Any key to exit\033[0m"
+        read -n1 -s 
+
+  esymac-info:
+    shortCut: v
+    confirm: false 
+    description: "z-esymac-vnfinfo"
+    scopes:
+      - pod 
+    command: bash 
+    background: false
+    args:
+      - -c  
+      - |
+        echo -e  "\033[36m#################### CHECK VNFINFO FOR ESYMAC ######################\033[0m"
+        ARR_ESYMAC=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep esymac))
+                for i in "${!ARR_ESYMAC[@]}"
+                do
+                        echo -e ""
+                        echo -e "\033[36m###############  ${ARR_ESYMAC[i]} #################\033[0m"
+                        kubectl exec -it ${ARR_ESYMAC[i]} -n $NAMESPACE -c esymachelper -- cat /persistant/storage/vnfinfo
+                done 
+        echo -e ""
+        echo -e "\033[36m>>> Press Any key to exit\033[0m"
+        read -n1 -s 
+
+  rtpTrcErr:
+    shortCut: t
+    confirm: false 
+    description: "z-RtpTrcErr"
+    scopes:
+      - po
+    command: bash 
+    background: false
+    args:
+      - -c  
+      - |
+        echo -e "\033[36m############ NREG RtpTrcErr Log Check ############\033[0m"
+        ARR_CNSBA_CTL=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep controller&))
+        ARR_CNSBA_OAM=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep oam&))
+        ARR_DLB=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep dlb))
+        ARR_LDAP=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep ldap&))
+        ARR_TRIGGER=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep trigger&))
+        ARR_ARPF=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep arpf&))
+        ARR_HSSCALLP=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep hsscallp&))
+
+        function rtp_err_check(){
+                local arr=("${!1}")
+                for i in "${!arr[@]}"
+                do
+                        echo -e ""
+                        echo -e "###############  ${arr[$i]}  #################"
+                        kubectl exec  ${arr[$i]} -c $2 -n $NAMESPACE -- bash -c "grep -i err /home/rtp99/99/trace/RtpTrcError/*"
+                done 
+        }
+        POD_TYPE=(all dlb ldapdisp arpf trigger cnsba-controller cnsba-oam hsscallp) 
+        echo -e "\033[36m>>> Please select pod type to check: [default - all]\033[0m"
+        echo -e "\033[32m[0] all\033[0m"
+        echo -e "\033[32m[1] dlb\033[0m"
+        echo -e "\033[32m[2] ldapdisp\033[0m"
+        echo -e "\033[32m[3] arpf\033[0m"
+        echo -e "\033[32m[4] trigger\033[0m"
+        echo -e "\033[32m[5] cnsba-controller\033[0m"
+        echo -e "\033[32m[6] cnsba-oam\033[0m"
+        echo -e "\033[32m[7] hsscallp\033[0m"
+        read POD_TYPE_IDX
+        mkdir -p /root/tmp/RtpTrcErr
+        FILE=/root/tmp/RtpTrcErr/$NAMESPACE.RtpTrcErr.${POD_TYPE[$POD_TYPE_IDX]}.`date +%m%d_%H%M`.log
+
+        case $POD_TYPE_IDX in
+          0)
+                rtp_err_check ARR_DLB[@] oam|tee -a $FILE
+                rtp_err_check ARR_LDAP[@] oam|tee -a $FILE
+                rtp_err_check ARR_ARPF[@] oam|tee -a $FILE
+                rtp_err_check ARR_TRIGGER[@] oam|tee -a $FILE
+                rtp_err_check ARR_HSSCALLP[@] oam|tee -a $FILE
+                rtp_err_check ARR_CNSBA_CTL[@] oam-sidecar|tee -a $FILE
+                rtp_err_check ARR_CNSBA_OAM[@] oam-sidecar|tee -a $FILE;;
+          1)
+                rtp_err_check ARR_DLB[@] oam|tee -a $FILE;;
+          2)
+                rtp_err_check ARR_LDAP[@] oam|tee -a $FILE;;
+          3)
+                rtp_err_check ARR_ARPF[@] oam|tee -a $FILE;;
+          4)
+                rtp_err_check ARR_TRIGGER[@] oam|tee -a $FILE;;
+          5)
+                rtp_err_check ARR_CNSBA_CTL[@] oam-sidecar|tee -a $FILE;;
+          6)
+                rtp_err_check ARR_CNSBA_OAM[@] oam-sidecar|tee -a $FILE;;
+          7)
+                rtp_err_check ARR_HSSCALLP[@] oam|tee -a $FILE;;
+          *)
+                echo -e "\033[36m>>> Please select correct num!! \033[0m";;
+        esac
+
+        echo -e ""
+        echo -e "\033[36m>>> Please check local file: \033[0m"
+        echo -e "\033[32m$FILE\033[0m"
+        echo -e "\033[36m>>> Press Any key to exit\033[0m"
+        read -n1 -s 
+
+  health-check:
+    shortCut: r
+    confirm: false 
+    description: "z-NREG-health-check"
+    scopes:
+      - po
+    command: bash 
+    background: false
+    args:
+      - -c  
+      - |
+        echo -e "\033[36m############ NREG HEALTH CHECK ############\033[0m"
+        ARR_CNSBA_CTL=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep controller))
+        ARR_CNSBA_OAM=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep oam))
+        ARR_DLB=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep dlb))
+        ARR_LDAP=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep ldap))
+        ARR_TRIGGER=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep trigger))
+        ARR_ARPF=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep arpf))
+        ARR_HSSCALLP=($(kubectl get pod -n $NAMESPACE|awk 'NR>1{print $1}'|grep hsscallp))
+        # RTP process check
+        function rtp_check(){
+                local arr=("${!1}")
+                for i in "${!arr[@]}"
+                do
+                        if [[ ${arr[$i]} =~ cnsba ]]; then
+                                result=$(kubectl exec -i ${arr[$i]} -c $2 -n $NAMESPACE -- bash -c "source /home/rtp99/.bashrc;/opt/SMAW/SMAWrtp/bin/status1 -e|wc -l")
+                        else
+                                result=$(kubectl exec -i ${arr[$i]} -c $2 -n $NAMESPACE -- bash -c "source ~/.bash_profile;status1 -e|wc -l")
+                        fi
+                        #echo -e "\033[36m${result}"
+
+                        if [ "$result" -eq 0 ]; then
+                                echo -e "[O] ${arr[$i]}: \033[32mRTP Process UP\033[0m"
+                        else
+                                echo -e "[X] ${arr[$i]}: \033[31mRTP Process not UP !!\033[0m"
+                        fi
+                done 
+        }
+
+        function port_check(){
+                local arr=("${!1}")
+                for i in "${!arr[@]}"
+                do
+                        result=$(kubectl exec  ${arr[$i]} -c $2 -n $NAMESPACE -- bash -c "netstat -anp|grep -E 'LIST'|grep -E $3|wc -l")
+                        #echo -e "\033[36m${result}"
+                        if [ $result -eq 0 ]; then
+                                echo -e "[X] ${arr[$i]}: \033[31mPort $3 Not Listening\033[0m"
+                        else 
+                                echo -e "[O] ${arr[$i]}: \033[32mPort $3 Listening\033[0m"
+                        fi
+                done 
+        }
+
+        function core_check(){
+                local arr=("${!1}")
+                for i in "${!arr[@]}"
+                do
+                        result=$(kubectl exec  ${arr[$i]} -c $2 -n $NAMESPACE -- bash -c "ls -l /home/rtp99/99/core|wc -l")
+                        #echo -e "\033[36m${result}"
+                        if [ $result -eq 1 ]; then
+                                echo -e "[O] ${arr[$i]}: \033[32mNo Core File\033[0m"
+                        else 
+                                echo -e "[X] ${arr[$i]}: \033[31mFound Core File\033[0m"
+                        fi
+                done 
+        }
+
+        # RTP process check 
+        FILE=/tmp/HealthCheck.$NAMESPACE.`date +%m%d_%H%M`.log
+        echo -e "\033[36m########## RTP Process Check ########### \033[0m"|tee -a $FILE
+        rtp_check ARR_CNSBA_CTL[@] oam-sidecar|tee -a $FILE
+        rtp_check ARR_CNSBA_OAM[@] oam-sidecar|tee -a $FILE
+        rtp_check ARR_DLB[@] oam|tee -a $FILE
+        rtp_check ARR_LDAP[@] oam|tee -a $FILE
+        rtp_check ARR_TRIGGER[@] oam|tee -a $FILE
+        rtp_check ARR_ARPF[@] oam|tee -a $FILE
+        rtp_check ARR_HSSCALLP[@] oam|tee -a $FILE
+        # Check port
+        echo -e "\033[36m"|tee -a $FILE
+        echo -e "\033[36m########## APP Port Check ########### \033[0m"|tee -a $FILE
+        port_check ARR_DLB[@] oam "3868"|tee -a $FILE
+        port_check ARR_LDAP[@] oam "16611"|tee -a $FILE
+        port_check ARR_TRIGGER[@] oam "50300"|tee -a $FILE
+        port_check ARR_HSSCALLP[@] oam "8087"|tee -a $FILE
+        port_check ARR_HSSCALLP[@] oam "16007777777"|tee -a $FILE
+
+        # Check Core
+        echo -e "\033[36m"|tee -a $FILE
+        echo -e "\033[36m########## APP Port Check ########### \033[0m"|tee -a $FILE
+        core_check ARR_DLB[@] oam |tee -a $FILE
+        core_check ARR_LDAP[@] oam |tee -a $FILE
+        core_check ARR_TRIGGER[@] oam |tee -a $FILE
+        core_check ARR_ARPF[@] oam |tee -a $FILE
+        core_check ARR_HSSCALLP[@] oam |tee -a $FILE
+
+        echo -e "\033[36m"
+        echo -e "\033[36m>>> Please check local file: \033[0m"
+        echo -e "$FILE"
+        echo -e "\033[36m>>> Press Any key to exit\033[0m"
+        read -n1 -s 
+
+  pod-pid:
+    shortCut: w 
+    confirm: false
+    description: "z-pod-pid-tcpdump"
+    scopes:
+      - po 
+    command: bash
+    background: false
+    args:
+      - -c
+      - |
+
+        function check_pubkey(){
+          # Get local public key
+          local_pubkey=$(cat ~/.ssh/id_rsa.pub)
+          echo -e "\033[36m>>> Check if remote host $1 already has the public key\033[0m"
+          ssh -q $1 "grep -q \"$local_pubkey\" ~/.ssh/authorized_keys"
+          
+          if [ $? -eq 0 ]; then
+            echo "Public key already exists on remote host $1"
+          else
+            echo "Copying public key to remote host $1"
+            ssh-copy-id -f $1
+          fi
+        }
+          
+        function stop_tcpdump(){
+          echo -e "\033[36m>>> Pod Name: "
+          echo -e "\033[32m            $1"
+          echo -e "\033[36m>>> Node Name: "
+          echo -e "\033[32m            $2"
+          echo -e "\033[31m>>> Tcpdump will be stopped ... ... " 
+          CMD="pkill -f tcpdump;"
+          ssh -q $2 "${CMD}"
+          echo -e "\033[36m"    
+          DEST=$1.$2 
+
+          LOCAL_DIR=$3
+          echo -e "\033[36m>>> Transfer file to local: in progress ......"
+          echo -e "\033[32mscp -q $2:/root/tmp/$DEST.pcap $LOCAL_DIR\033[0m"
+          scp  $2:/root/tmp/$DEST.pcap $LOCAL_DIR
+          #echo -e "\033[36m>>> Please check local dir: $LOCAL_FILE"
+        }
+
+        function run_tcpdump(){
+          echo -e "\033[36m>>> Pod Name: "
+          echo -e "\033[32m            $1"
+          echo -e "\033[36m>>> Node Name: "
+          echo -e "\033[32m            $2"
+          check_pubkey $2
+          containerID=`kubectl describe pod $1 -n $NAMESPACE|grep contain|head -1|awk -F// '{print $2}'`
+          #echo -e "\033[36m>>> ContainerID: "
+          #echo -e "\033[36m>>>            $containerID"
+        
+          echo -e "\033[36m"    
+          echo -e "\033[36m>>> Please enter tcpdump port filter: \033[32m[ ex: 8080 (single port) or 8080|9090 (multi port); Enter - default All port ]\033[0m"        
+          read PORT
+          if [ -z "$PORT" ]; then
+            tmpPort=""
+          else  
+            tmpPort="port "${PORT}
+          fi
+
+          PORT=${tmpPort//|/ or port }
+          #echo -e "\033[36m$PORT"
+          DEST=$1.$2 
+          CTR_CMD="ctr -n k8s.io c info ${containerID}"
+          CMD='ppid=$('${CTR_CMD}'|grep /net|cut -d "/" -f 3);echo -e "\033[36m>>> Pod Pid: \033[0m"${ppid};rpm -qa | grep -qw tcpdump || yum install tcpdump -y;mkdir -p /root/tmp;nsenter -t ${ppid} -n -- tcpdump -i any '${PORT}' -w /root/tmp/'${DEST}'.pcap`</dev/null` >nohup.out 2>&1 &'
+          ssh -q $2 "${CMD}"
+          echo -e "\033[31m>>> Tcpdump has started ... ... " 
+        }
+
+        ############# MAIN ############# 
+        echo -e "\033[36m>>> Check if id_rsa.pub exists, generate it if not"
+        if [ ! -f ~/.ssh/id_rsa.pub ]; then
+           echo "               There is no ~/.ssh/id_rsa then generate"
+           ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+        fi
+        echo -e ""    
+
+        echo -e "\033[36m>>> Which tcpdump operation do you want to execute: " 
+        echo -e "\033[32m       [0] Start tcpdump on Selected pod \033[0m"
+        echo -e "\033[32m       [1] Stop tcpdump on Selected pod \033[0m"
+        echo -e "\033[32m       [2] Start tcpdump on Multiple pod \033[0m"
+        echo -e "\033[32m       [3] Stop tcpdump on Multiple pod \033[0m"
+        read CHOOSE
+ 
+        case $CHOOSE in
+        0)
+                echo -e "\033[36m########## Will execute cmd on selected pod ########## "
+                run_tcpdump $NAME $COL-NODE
+                ;;
+        1)
+                echo -e "\033[36m########## Will execute cmd on selected pod ########## "
+                echo -e "\033[36m>>> Please give a session name:\033[0m"
+                read SESSION
+                LOCAL_FILE=/root/tmp/pcap_${SESSION}_`date +%m%d_%H%M`
+                mkdir -p $LOCAL_FILE
+                #echo "$LOCAL_FILE"
+                stop_tcpdump $NAME $COL-NODE $LOCAL_FILE
+                echo -e "\033[36m>>> Please check local dir: \033[0m"
+                echo -e "$LOCAL_FILE"
+                ;;
+        2)
+                echo -e "\033[36m########## Will execute cmd on Multiple pod ########## "
+                echo -e "\033[36m>>> Please enter Pod Type: \033[32m[Ex: hsscallp|cnsba-controller|dlb|ldapdisp|trigger|cnsba-oam] \033[0m" 
+                read POD_TYPE 
+                ARR_POD=($(kubectl get pod -n $NAMESPACE|awk '{print $1}'|grep -E "${POD_TYPE}"))
+                ARR_NODE=($(kubectl get pod -n $NAMESPACE -o wide|grep -E "${POD_TYPE}"|awk '{print $7}'))
+                #echo "${ARR_POD[@]}"
+                #echo "${ARR_NODE[@]}"
+                for (( i=0; i<${#ARR_POD[@]}; i++ )); do
+                  #echo "${ARR_POD[$i]} is located on ${ARR_NODE[$i]}"
+                  run_tcpdump ${ARR_POD[$i]} ${ARR_NODE[$i]}
+                done
+                ;;
+        3)
+                echo -e "\033[36m########## Will execute cmd on Multiple pod ########## "
+                echo -e "\033[36m>>> Please give a session name:\033[0m"
+                read SESSION
+                echo -e "\033[36m>>> Please enter Pod Type: \033[32m[Ex: hsscallp|cnsba-controller|dlb|ldapdisp|trigger|cnsba-oam] \033[0m" 
+                read POD_TYPE 
+                ARR_POD=($(kubectl get pod -n $NAMESPACE|awk '{print $1}'|grep -E "${POD_TYPE}"))
+                ARR_NODE=($(kubectl get pod -n $NAMESPACE -o wide|grep -E "${POD_TYPE}"|awk '{print $7}'))
+                #echo "${ARR_POD[@]}"
+                #echo "${ARR_NODE[@]}"
+                LOCAL_FILE=/root/tmp/pcap_${SESSION}_`date +%m%d_%H%M`
+                mkdir -p $LOCAL_FILE
+                echo "$LOCAL_FILE"
+                for (( i=0; i<${#ARR_POD[@]}; i++ )); do
+                  #echo "${ARR_POD[$i]} is ${ARR_NODE[$i]}"
+                  stop_tcpdump ${ARR_POD[$i]} ${ARR_NODE[$i]} $LOCAL_FILE
+                done
+                echo -e "\033[36m>>> Please check local dir: \033[0m"
+                echo -e "$LOCAL_FILE"
+                ;;
+        esac
+
+
+        echo -e "\033[36m"    
+        echo -e "\033[36m>>> Press Any key to exit"
+        read -n1 -s 
+
+  dump-alm:
+    shortCut: w 
+    confirm: false
+    description: "z-rtpDumpLog-alm"
+    scopes:
+      - containers 
+    command: bash
+    background: false
+    args:
+      - -c
+      - |
+        mkdir -p /root/tmp/RtpDumpLog
+        FILE=/root/tmp/RtpDumpLog/RtpDumpLog.$POD.$NAME.`date +%m%d%H%M`
+        
+        kubectl exec -it $POD -n $NAMESPACE -c $NAME -- bash -c "source ~/.bash_profile;RtpDumpLog" |tee $FILE  
+        echo -e ""
+        echo -e "\033[36m########### Summary for \033[31mmajor/minor \033[36mBegin ####################"    
+        grep -ie "major|minor" $FILE
+        echo -e "\033[36m########### Summary for \033[31mmajor/minor \033[36mEnd ####################"    
+        echo -e ""    
+        echo -e "\033[36m>>> Please check alarm file: \033[32m$FILE"
+        echo -e "\033[36m>>> Press Any key to exit\033[0m"
+        read -n1 -s 
+
+
+  rtp-trace:
+    shortCut: r 
+    confirm: false
+    description: "z-rtp-trace"
+    scopes:
+      - containers 
+    command: bash
+    background: false
+    args:
+      - -c
+      - |  
+        mkdir -p /root/tmp/Trace
+        echo -e "\033[36m########## RTP trace ########## "
+        echo -e "\033[36m>>> Do you want to Start or Stop trace? \033[32m[y - start; n - stop; default press ENTER - start]\033[0m"
+        read CHOOSE 
+
+        if [ "$CHOOSE" == "y" ] || [ -z "$CHOOSE" ]; then
+                echo -e "\033[36m########## Will start RTP trace ########## "
+                echo -e "\033[36m>>> Please enter session name\033[0m"
+                read SESSION 
+                echo -e "\033[36m>>> Please enter trace level: \033[32m[ex: ALL_6]\033[0m"
+                read LEVEL 
+                echo -e "\033[36m>>> Please enter process name: \033[32m[ex: UMS NGC]\033[0m"
+                read PROCESS 
+        
+                kubectl exec -it $POD -n $NAMESPACE -c $NAME -- bash -c "source ~/.bash_profile;CnAdminTool TraceStart ${SESSION} ${LEVEL} ${PROCESS}"  
+        elif [ "$CHOOSE" == "n" ]; then
+                echo -e "\033[36m########## Will stop RTP trace ########## "
+                echo -e "\033[36m>>> Please enter session name\033[0m"
+                read SESSION 
+        
+                kubectl exec -it $POD -n $NAMESPACE -c $NAME -- bash -c "source ~/.bash_profile;CnAdminTool TraceStop ${SESSION} "  
+                SOURCE_LOG=/logstore/$POD/oam/99/trace/$SESSION.backup
+                FILE=/root/tmp/Trace/$SESSION.$POD.$NAME.`date +%m%d%H%M`
+                kubectl cp $POD:$SOURCE_LOG $FILE -n $NAMESPACE -c $NAME 
+                echo -e "\033[36m>>> Please check local logfile: "
+                echo -e "\033[32m$FILE"
+        else
+                echo -e "\033[36mInvalid input"
+        fi
+
+        echo -e "\033[36m"    
+        echo -e "\033[36m>>> Press Any key to exit"
+        read -n1 -s 
+
+  cnsbasc-trace:
+    shortCut: b 
+    confirm: false
+    description: "z-cnsba-sc-trace"
+    scopes:
+      - containers 
+    command: bash
+    background: false
+    args:
+      - -c
+      - |               
+        mkdir -p /root/tmp/cnSBA
+        echo -e "\033[36m########## CNSBA trace ########## "
+        echo -e "\033[36m>>> Do you want to Start or Stop trace? \033[32m[y - start; n - stop; default press ENTER - start]\033[0m"
+        read CHOOSE 
+
+        if [ "$CHOOSE" == "y" ] || [ -z "$CHOOSE" ]; then
+                echo -e "\033[36m>>> Please enter trace DURATION"
+                read DURATION 
+        
+                echo -e "\033[36m########## Will start CNSBA trace ########## "
+                kubectl exec -it $POD -n $NAMESPACE -c $NAME -- bash -c "curl -d 'command=debug rootLogger ${DURATION}' localhost:16001/gogo/execCommand"
+        elif [ "$CHOOSE" == "n" ]; then
+                echo -e "\033[36m########## Will stop CNSBA trace ########## "
+                kubectl exec -it $POD -n $NAMESPACE -c $NAME -- bash -c "curl -d 'command=debug rootLogger 1' localhost:16001/gogo/execCommand"
+                sleep 2
+                FILE=/root/tmp/cnSBA/cnSBA.sc.$POD.$NAME.`date +%m%d%H%M`
+                kubectl cp $POD:/commonlogstore/cnsba-sidecar $FILE -n $NAMESPACE -c $NAME 
+                echo -e "\033[36m>>> Please check local logfile: "
+                echo -e "\033[32m$FILE\033[0m"
+
+        else
+                echo -e "\033[36mInvalid input"
+        fi
+
+        echo -e "\033[36m"    
+        echo -e "\033[36m>>> Press Any key to exit"
+        read -n1 -s 
+
+  file-cp-container:
+    shortCut: y 
+    confirm: false
+    description: "z-cp-file-container"
+    scopes:
+      - containers 
+    command: bash
+    background: false
+    args:
+      - -c
+      - |
+        echo -e "\033[36m>>> Please enter file transfer direction: \033[32m[1 - from Container; 2 - to Container; default press ENTER - 1]"
+        read CHOOSE 
+        echo -e "\033[36m>>> Please enter source file\033[0m"
+        read SRC 
+        echo -e "\033[36m>>> Please enter destination file\033[0m"
+        read DEST 
+        
+        
+        if [ "$CHOOSE" == "1" ] || [ -z "$CHOOSE" ]; then
+                kubectl cp $POD:$SRC $DEST -n $NAMESPACE -c $NAME 
+                echo -e "\033[36m>>> Please check file locally: \033[32m$DEST"    
+        else
+                kubectl cp $SRC $POD:$DEST -n $NAMESPACE -c $NAME 
+                echo -e "\033[36m>>> Please check file in container: \033[32m$POD:$DEST"    
+        fi
+
+        echo -e "\033[36m>>> Press Any key to exit\033[0m"
+        read -n1 -s 
+
+  netstat-container:
+    shortCut: n 
+    confirm: false
+    description: "z-netstat-container"
+    scopes:
+      - containers 
+    command: bash
+    background: false
+    args:
+      - -c
+      - |
+        echo -e "\033[36m>>> Please enter port you want to check\033[32m(if multiple port use | to seperate)\033[0m"
+        read PORT 
+        
+        kubectl exec -it $POD -n $NAMESPACE -c $NAME -- bash -c "watch -n 1 -d 'netstat -anp|grep -E \"${PORT}\"'"
+
+        echo -e "\033[36m>>> Press Any key to exit\033[0m"
+        read -n1 -s 
+
+
+  helm-history:
+    shortCut: h 
+    confirm: false
+    description: "z-helm-history"
+    scopes:
+      - helm 
+    command: bash
+    background: false
+    args:
+      - -c
+      - |
+        echo -e  "\033[36m#################### CHECK HELM RELEASE HISTORY ######################\033[0m" 
+        helm3 history -n $NAMESPACE $NAME
+        echo -e "\033[36m>>> Press Any key to exit\033[0m"
+        read -n1 -s 
+
+
+  helm-operation:
+    shortCut: o 
+    confirm: false
+    description: "z-helm-upg/ins/rb/unins"
+    scopes:
+      - helm 
+    command: bash
+    background: false
+    args:
+      - -c
+      - |
+        CONF=/tmp/helm.$NAMESPACE.conf
+        if [ -f "$CONF" ]; then
+                echo -e "\033[36m>>> Please check conf file: \033[32m$CONF\033[0m"
+                echo -e "\033[36m#############################\033[0m"
+                cat $CONF
+                echo -e "\033[36m#############################\033[0m"
+                echo -e ""
+                echo -e "\033[36m>>> Do you want to change this file? \033[32m[y/n - default y]\033[0m"
+                read CHANGE
+        fi
+
+        if [ "$CHANGE" == "y" ] || [ -z "$CHANGE" ]; then
+                echo -e "\033[36m>>> Please enter NREG bundle path:\033[0m"
+                read BUNDLE
+                echo -e "\033[36m>>> Please enter Value.yaml path:\033[0m"
+                read VALUE
+                echo -e "\033[36m>>> Please enter hook option: \033[32m[y - with hooks; n - no-hooks; default y]\033[0m"
+                read HOOKS
+                #set -x
+                if [ "$HOOKS" == "y" ] || [ -z "$HOOKS" ]; then
+                        HOOKS=""
+                elif [ "$HOOKS" == "n" ]; then
+                        HOOKS="--no-hooks"
+                fi
+                #set +x
+                echo -e "BUNDLE=$BUNDLE">$CONF
+                echo -e "VALUE=$VALUE">>$CONF
+                echo -e "HOOKS=$HOOKS">>$CONF
+                echo -e ""
+                echo -e "\033[36m>>> Please check NEW conf file: $CONF\033[0m"
+                echo -e "\033[36m#############################\033[0m"
+                cat $CONF
+                echo -e "\033[36m#############################\033[0m"
+        fi
+        source $CONF
+
+        function check_pod(){
+                kubectl get pod -n $NAMESPACE |grep $1
+                sleep 5
+                kubectl get pod -n $NAMESPACE |awk '{print $2}'|awk -F'/' '$1==$2{print $1" "$2}'
+        }
+
+        OPERATION_ARRAY=(upgrade install rollback uninstall)
+        echo -e ""
+        echo -e "\033[36m>>> Please enter operation: \033[32m[ Default - 0]\033[0m"
+        echo -e "\033[32m[0] - upgrade"
+        echo -e "\033[32m[1] - install"
+        echo -e "\033[32m[2] - rollback"
+        echo -e "\033[32m[3] - uninstall\033[0m"
+        read OPER_IDX
+         
+        if [ "$OPER_IDX" == "0" ] || [ "$OPER_IDX" == "1" ] || [ -z "$OPER_IDX" ]; then
+          if  [ "$OPER_IDX" == "1" ] ; then
+                CHART_ARRAY=(nreg-hss-hlr-cluster-2 nreg-hss-hlr-cluster-security nreg-hss-hlr-network dco etcd xds crdb cnsba-controller nreg-hss-hlr-2)
+                echo -e "\033[36m>>> Please select chart:\033[0m"
+                echo -e "\033[32m[0] nreg-hss-hlr-cluster\033[0m"
+                echo -e "\033[32m[1] nreg-hss-hlr-cluster-security\033[0m"
+                echo -e "\033[32m[2] nreg-hss-hlr-network\033[0m"
+                echo -e "\033[32m[3] dco\033[0m"
+                echo -e "\033[32m[4] etcd\033[0m"
+                echo -e "\033[32m[5] xds\033[0m"
+                echo -e "\033[32m[6] crdb\033[0m"
+                echo -e "\033[32m[7] cnsba-controller\033[0m"
+                echo -e "\033[32m[8] nreg-hss-hlr\033[0m"
+                read CHART_INDEX
+                CHART_PREFIX=${CHART_ARRAY[$CHART_INDEX]}
+          else 
+                tmp=${COL-CHART} 
+                CHART_PREFIX=${tmp%????????}
+          fi
+
+                CHART=$(find $BUNDLE/INSTALL_MEDIA/CHARTS -name "*$CHART_PREFIX*")
+                echo -e "\033[36m$CHART\033[0m" 
+                CMD="helm3 ${OPERATION_ARRAY[$OPER_IDX]} $NAME $CHART -f $VALUE --timeout 15m --wait  --namespace $NAMESPACE" 
+        elif [ "$OPER_IDX" == "2" ]; then
+                echo -e "\033[36m>>> Please enter rollback version:\033[0m"
+                read VERSION
+                CMD="helm3 ${OPERATION_ARRAY[$OPER_IDX]} $NAME $VERSION --timeout 15m --wait $HOOKS --namespace $NAMESPACE" 
+        elif [ "$OPER_IDX" == "3" ]; then
+                CMD="helm3 ${OPERATION_ARRAY[$OPER_IDX]} $NAME --timeout 15m --wait $HOOKS --namespace $NAMESPACE" 
+        fi 
+
+        echo -e ""
+        echo -e "\033[36m>>> Do you want to execute below cmd? [y/n] - default [y]\033[0m"
+        echo -e $CMD 
+        read EXECUTE
+        if [ "$EXECUTE" == "y" ] || [ -z "$EXECUTE" ]; then
+                $CMD &
+                #source /root/.config/k9s/ck_pod.sh&
+                #wait
+        elif [ "$EXECUTE" == "n" ]; then
+                echo -e "\033[31mAbort Abort Abort\033[0m"  
+        fi
+        
+        echo -e ""
+        echo -e "\033[36m>>> Press Any key to exit\033[0m"
+        read -n1 -s 
+
