@@ -12,14 +12,43 @@ this page is used to summary the kubernetes configuration by default
   - [Running kubelet commond line parameters](#running-kubelet-commond-line-parameters)
 - [KubeProxy Configuraiton](#kubeproxy-configuraiton)
   - [Init default configuraiton](#init-default-configuraiton)
+  - [Running kube-proxy configuration](#running-kube-proxy-configuration)
+  - [Running kube-proxy command line parameters](#running-kube-proxy-command-line-parameters)
 - [Kube-apiserver Configuration](#kube-apiserver-configuration)
+  - [Running command line parameters:](#running-command-line-parameters)
+  - [extension-apiserver-authentication](#extension-apiserver-authentication)
 - [Kube-Scheduler Configuration](#kube-scheduler-configuration)
+  - [Running Command Line parameters](#running-command-line-parameters-1)
+  - [Running configfile](#running-configfile)
 - [Kube-Controller Configuration](#kube-controller-configuration)
 - [CoreDNS Configuration](#coredns-configuration)
 
 
 # Kube Configuration
 
+```yaml
+[root@hpg10ncs-hpg10ncs-masterbm-1 kubernetes (Backup)]# cat /etc/kubernetes/cluster-admin.kubeconfig 
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    certificate-authority: /etc/kubernetes/ssl/ca.pem
+    server: https://172.31.7.10:8443
+  name: bcmt-kubernetes
+contexts:
+- context:
+    cluster: bcmt-kubernetes
+    namespace: kube-system
+    user: kubectl
+  name: kubectl-context
+current-context: kubectl-context
+preferences: {}
+users:
+- name: kubectl
+  user:
+    client-certificate: /etc/kubernetes/ssl/cluster-admin.pem
+    client-key: /etc/kubernetes/ssl/cluster-admin-key.pem
+```
 ```bash
 kubectl config view
 ```
@@ -332,8 +361,114 @@ winkernel:
   rootHnsEndpointName: ""
   sourceVip: ""
 ```
+
+## Running kube-proxy configuration
+```bash
+[root@hpg10ncs-hpg10ncs-edgebm-2 ~]# cat $(ps -ef | grep kube-proxy | grep "\--config" | awk '{ printf $9 }' | cut -d "=" -f2 )
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+bindAddress: 0.0.0.0
+healthzBindAddress: 127.0.0.1:10256
+metricsBindAddress: 127.0.0.1:10249
+clientConnection:
+  acceptContentTypes: ""
+  burst: 10
+  contentType: application/vnd.kubernetes.protobuf
+  kubeconfig: "/etc/kubernetes/kube-proxy.kubeconfig"
+  qps: 5
+clusterCIDR: "10.10.0.0/16"
+configSyncPeriod: 15m0s
+conntrack:
+  maxPerCore: 8192
+  min: 131072
+  tcpCloseWaitTimeout: 1h0m0s
+  tcpEstablishedTimeout: 24h0m0s
+enableProfiling: false
+hostnameOverride: ""
+iptables:
+  masqueradeAll: false
+  masqueradeBit: 14
+  minSyncPeriod: 0s
+  syncPeriod: 30s
+mode: "iptables"
+oomScoreAdj: -999
+portRange: ""
+udpIdleTimeout: 250ms
+[root@hpg10ncs-hpg10ncs-edgebm-2 ~]# 
+```
+## Running kube-proxy command line parameters
+```bash
+[root@hpg10ncs-hpg10ncs-edgebm-2 ~]# ps -ef | grep kube-proxy | grep "\--config" | awk '{ for ( i = 9; i <= NF; i++) {printf "%s\n", $i}; printf "\n" }'
+--config=/etc/kubernetes/kube-proxy-config.yml
+--oom-score-adj=-998
+
+[root@hpg10ncs-hpg10ncs-edgebm-2 ~]#
+```
 # Kube-apiserver Configuration
-#@ extension-apiserver-authentication 
+## Running command line parameters:
+
+```bash
+[root@hpg10ncs-hpg10ncs-masterbm-1 kubernetes (Backup)]# ps -ef | grep kube-apiserver | grep -v podman | grep -v conmon | grep -v go-runner | grep -v grep | awk '{ for ( i = 9; i <= NF; i++) { printf "%s\n", $i }; printf "\n" }'
+--default-not-ready-toleration-seconds=60
+--default-unreachable-toleration-seconds=60
+--feature-gates=
+--external-hostname=hpg10ncs-hpg10ncs-masterbm-1
+--apiserver-count=3
+--bind-address=172.31.7.10
+--etcd-servers=https://172.31.7.2:2379,https://172.31.7.10:2379,https://172.31.7.11:2379
+--etcd-cafile=/etc/etcd/ssl/ca.pem
+--etcd-certfile=/etc/etcd/ssl/etcd-client.pem
+--etcd-keyfile=/etc/etcd/ssl/etcd-client-key.pem
+--allow-privileged=true
+--service-cluster-ip-range=10.254.0.0/16
+--secure-port=8443
+--profiling=false
+--audit-log-path=/data0/log/bcmt/kube-apiserver/audit.log
+--audit-log-maxage=30
+--audit-log-maxbackup=10
+--audit-log-maxsize=100
+--audit-log-format=json
+--audit-policy-file=/etc/kubernetes/audit-policy.yaml
+--audit-log-truncate-enabled=true
+--audit-log-truncate-max-batch-size=4096
+--audit-log-truncate-max-event-size=2048
+--service-account-lookup=true
+--request-timeout=30s
+--encryption-provider-config=/etc/kubernetes/encryption_cfg.yml
+--insecure-port=0
+--anonymous-auth=false
+--authorization-mode=Node,RBAC
+--advertise-address=172.31.7.10
+--enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,NodeRestriction,Priority,PodSecurityPolicy,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota,AlwaysPullImages
+--tls-cert-file=/etc/kubernetes/ssl/apiserver.pem
+--tls-private-key-file=/etc/kubernetes/ssl/apiserver-key.pem
+--tls-min-version=VersionTLS12
+--tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384
+--client-ca-file=/etc/kubernetes/ssl/ca.pem
+--service-account-jwks-uri=https://k8s-apiserver:8443/openid/v1/jwks
+--service-account-issuer=https://kubernetes.default.svc.cluster.local
+--service-account-signing-key-file=/etc/kubernetes/ssl/serviceaccount-key.pem
+--service-account-key-file=/etc/kubernetes/ssl/serviceaccount-key.pem
+--kubelet-certificate-authority=/etc/kubernetes/ssl/ca.pem
+--kubelet-client-certificate=/etc/kubernetes/ssl/cluster-admin.pem
+--kubelet-client-key=/etc/kubernetes/ssl/cluster-admin-key.pem
+--runtime-config=scheduling.k8s.io/v1beta1=true,admissionregistration.k8s.io/v1=true
+--cloud-provider=
+--v=1
+--requestheader-client-ca-file=/etc/kubernetes/ssl/ca.pem
+--requestheader-allowed-names=
+--requestheader-extra-headers-prefix=X-Remote-Extra-
+--requestheader-group-headers=X-Remote-Group
+--requestheader-username-headers=X-Remote-User
+--proxy-client-cert-file=/etc/kubernetes/ssl/aggregator-proxy.pem
+--proxy-client-key-file=/etc/kubernetes/ssl/aggregator-proxy-key.pem
+--oidc-issuer-url=https://bcmt-ckey-ckey.ncms.svc:8443/auth/realms/ncm
+--oidc-client-id=ncm-manager
+--oidc-username-claim=preferred_username
+--oidc-groups-claim=groups
+--oidc-ca-file=/etc/kubernetes/ssl/ca.pem
+```
+## extension-apiserver-authentication 
 ```yaml
 root@tstbed-1:~# kubectl get cm -n kube-system extension-apiserver-authentication -o yaml
 apiVersion: v1
@@ -393,7 +528,61 @@ metadata:
 
 # Kube-Scheduler Configuration
 
+## Running Command Line parameters
+
+```bash
+[root@hpg10ncs-hpg10ncs-masterbm-1 kubernetes (Backup)]# ps -ef | grep kube-scheduler | grep -v podman | grep -v conmon | grep -v go-runner | grep -v grep | awk '{ for (i = 9; i <= NF; i++) { printf "%s\n", $i }; printf "\n" }'
+--address=127.0.0.1
+--kubeconfig=/etc/kubernetes/kube-scheduler.kubeconfig
+--config=/etc/kubernetes/kube-scheduler-extender-config.yml
+--profiling=false
+--tls-min-version=VersionTLS12
+--tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384
+--v=1
+
+[root@hpg10ncs-hpg10ncs-masterbm-1 kubernetes (Backup)]# 
+
+```
+## Running configfile
+```bash
+[root@hpg10ncs-hpg10ncs-masterbm-1 kubernetes (Backup)]# cat $(ps -ef | grep kube-scheduler | grep -v podman | grep -v conmon | grep -v go-runner | grep -v grep | awk '{ print $11 }' | cut -d "=" -f2)
+apiVersion: kubescheduler.config.k8s.io/v1beta1
+kind: KubeSchedulerConfiguration
+clientConnection:
+  kubeconfig: "/etc/kubernetes/kube-scheduler.kubeconfig"
+extenders :
+ - urlPrefix: 'http://localhost:8044/scheduler'
+   filterVerb: predicates/always_true
+   weight: 1
+   enableHTTPS: false
+```
+
 # Kube-Controller Configuration
+
+```bash
+[root@hpg10ncs-hpg10ncs-masterbm-1 kubernetes (Backup)]# ps -ef | grep kube-controller | grep -v podman | grep -v conmon | grep -v go-runner | grep -v grep | awk '{ for (i = 9; i <= NF; i++) { printf "%s\n", $i }; printf "\n" }'
+--bind-address=127.0.0.1
+--port=0
+--secure-port=10257
+--tls-cert-file=/etc/kubernetes/ssl/kube-controller-manager.pem
+--tls-private-key-file=/etc/kubernetes/ssl/kube-controller-manager-key.pem
+--tls-min-version=VersionTLS12
+--tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384
+--node-monitor-period=5s
+--node-monitor-grace-period=40s
+--leader-elect-renew-deadline=12s
+--kubeconfig=/etc/kubernetes/kube-controller-manager.kubeconfig
+--use-service-account-credentials=true
+--service-account-private-key-file=/etc/kubernetes/ssl/serviceaccount-key.pem
+--root-ca-file=/etc/kubernetes/ssl/ca.pem
+--profiling=false
+--terminated-pod-gc-threshold=100
+--feature-gates=
+--cluster-signing-cert-file=/etc/kubernetes/ssl/ca.pem
+--cluster-signing-key-file=/etc/kubernetes/ssl/ca-key.pem
+--cloud-provider=
+--v=1
+```
 
 # CoreDNS Configuration
 
