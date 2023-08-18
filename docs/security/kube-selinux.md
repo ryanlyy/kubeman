@@ -181,3 +181,144 @@ Where processes run in domains and the actions on objects are controlled by poli
 
 ### A variant called Multi-Category Security (MCS) 
 
+# SELinux Kubenetes
+* Level
+* Role
+* Type
+* User
+  
+```
+securityContext.seLinuxOptions (SELinuxOptions)
+
+The SELinux context to be applied to the container. If unspecified, the container runtime will allocate a random SELinux context for each container. May also be set in PodSecurityContext. If set in both SecurityContext and PodSecurityContext, the value specified in SecurityContext takes precedence. Note that this field cannot be set when spec.os.name is windows.
+
+SELinuxOptions are the labels to be applied to the container
+
+securityContext.seLinuxOptions.level (string)
+
+Level is SELinux level label that applies to the container.
+
+securityContext.seLinuxOptions.role (string)
+
+Role is a SELinux role label that applies to the container.
+
+securityContext.seLinuxOptions.type (string)
+
+Type is a SELinux type label that applies to the container.
+
+securityContext.seLinuxOptions.user (string)
+
+User is a SELinux user label that applies to the container.
+```
+
+NOTE: Below is based on k8s 1.25
+
+staging/src/k8s.io/pod-security-admission/policy/check_seLinuxOptions.go
+
+```golang
+/*
+Setting the SELinux type is restricted, and setting a custom SELinux user or role option is forbidden.
+
+**Restricted Fields:**
+spec.securityContext.seLinuxOptions.type
+spec.containers[*].securityContext.seLinuxOptions.type
+spec.initContainers[*].securityContext.seLinuxOptions.type
+
+**Allowed Values:**
+undefined/empty
+container_t
+container_init_t
+container_kvm_t
+
+**Restricted Fields:**
+spec.securityContext.seLinuxOptions.user
+spec.containers[*].securityContext.seLinuxOptions.user
+spec.initContainers[*].securityContext.seLinuxOptions.user
+spec.securityContext.seLinuxOptions.role
+spec.containers[*].securityContext.seLinuxOptions.role
+spec.initContainers[*].securityContext.seLinuxOptions.role
+
+**Allowed Values:** undefined/empty
+*/
+
+```
+* seLinuxOptions.type
+  * undefined/empty
+  * container_t
+  * container_init_t
+  * container_kvm_t
+
+```golang
+  selinux_allowed_types_1_0 = sets.NewString("", "container_t", "container_init_t", "container_kvm_t")
+```
+
+* seLinuxOptions.user
+  * undefined/empty
+
+* seLinuxOptions.role
+  * undefined/empty
+
+```golang
+
+        validSELinuxOptions := func(opts *corev1.SELinuxOptions) bool {
+                valid := true
+                if !selinux_allowed_types_1_0.Has(opts.Type) {
+                        valid = false
+                        badTypes.Insert(opts.Type)
+                }
+                if len(opts.User) > 0 {
+                        valid = false
+                        setUser = true
+                }
+                if len(opts.Role) > 0 {
+                        valid = false
+                        setRole = true
+                }
+                return valid
+        }
+```
+# How does SELinux works
+SELinux is a labeling system and SELinux cares only about labels. From the SELinux point of view each **object** on the system has an **SELinux label**
+
+* Objects
+  * file
+  * directory
+  * socket file
+  * symlink
+  * shared memory
+  * semaphore
+  * fifo file
+  * etc.
+  * subject 
+    * running process
+    * Linux user entity
+
+For example:
+* file
+
+/etc/passwd: system_u:object_r:passwd_file_t:s0
+
+* Container Process
+
+system_u:system_r:container_t:s0:c940,c967
+
+  * system_u: a SELinux User (not same with Linux user) (several Linux users can be mapped to a single SELinux user); system_u user can be limited to a set of SELinux role
+  * passwd_file_t|container_t: SELinux Type
+  * 
+
+SELinux Role: allow container_t container_file_t:file {getattr open read}; 
+
+every process labeled as container_t can get attributes, open and read any file labeled as container_file_t on the filesystem
+
+With MCS:
+* the SystemLow sensitivity label is s0 
+* the SystemHigh sensitivity label is s0:c0.c1023 
+  
+with MLS:
+* SystemLow (s0) 
+* SystemHigh s15:c0.c255. 
+
+References
+* https://www.redhat.com/en/blog/how-selinux-separates-containers-using-multi-level-security
+* https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/selinux_users_and_administrators_guide/mls
+* 

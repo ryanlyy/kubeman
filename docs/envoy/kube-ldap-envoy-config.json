@@ -1,0 +1,105 @@
+"dynamic_resources": {
+    "lds_config": {
+     "ads": {},
+     "resource_api_version": "V3"
+    },
+    "cds_config": {
+     "ads": {},
+     "resource_api_version": "V3"
+    },
+    "ads_config": {
+     "api_type": "GRPC",
+     "grpc_services": [
+      {
+       "envoy_grpc": {
+        "cluster_name": "xds_cluster"
+       }
+      }
+     ],
+     "transport_api_version": "V3"
+    }
+}
+{
+    {
+        "name": "xds_cluster",
+        "type": "STRICT_DNS",
+        "connect_timeout": "0.250s",
+        "circuit_breakers": {
+         "thresholds": [
+          {
+           "max_pending_requests": 1000,
+           "max_requests": 1000
+          }
+         ]
+        },
+        "http2_protocol_options": {},
+        "upstream_connection_options": {
+         "tcp_keepalive": {}
+        },
+        "load_assignment": {
+         "cluster_name": "xds_cluster",
+         "endpoints": [
+          {
+           "lb_endpoints": [
+            {
+             "endpoint": {
+              "address": {
+               "socket_address": {
+                "address": "qdlab3-udmhss-xds-intsvc.nokia-hss.svc.cluster.local.",
+                "port_value": 7777
+               }
+              }
+             }
+            }
+           ]
+          }
+         ]
+        }
+       },
+    { 
+    "version_info": "474434",
+    "cluster": {
+     "@type": "type.googleapis.com/envoy.config.cluster.v3.Cluster",
+     "name": "ldapdb16612_cluster",
+     "type": "STATIC",
+     "connect_timeout": "1s",
+     "per_connection_buffer_limit_bytes": 20971520,
+     "circuit_breakers": {
+      "thresholds": [
+       {
+        "max_connections": 5000,
+        "max_pending_requests": 500,
+        "max_requests": 5000,
+        "max_retries": 6
+       }
+      ]
+     },
+     "upstream_connection_options": {
+      "tcp_keepalive": {
+       "keepalive_probes": 2,
+       "keepalive_time": 5,
+       "keepalive_interval": 10
+      }
+     },
+     "load_assignment": {
+      "cluster_name": "ldapdb16612_cluster",
+      "endpoints": [
+       {
+        "lb_endpoints": [
+         {
+          "endpoint": {
+           "address": {
+            "socket_address": {
+             "address": "10.67.28.72",
+             "port_value": 16611
+            }
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "last_updated": "2023-05-09T06:02:17.847Z"
+    }
