@@ -3,13 +3,9 @@ this page is list all timer that kubernetes used
 
 - [Kubernetes Timer Summary](#kubernetes-timer-summary)
 - [kube-apiservers timer](#kube-apiservers-timer)
-  - [| apiserver | shutdown-watch-termination-grace-period | This option, if set, represents the maximum amount of grace period the apiserver will wait for active watch request(s) to drain during the graceful server shutdown window. |||](#-apiserver--shutdown-watch-termination-grace-period--this-option-if-set-represents-the-maximum-amount-of-grace-period-the-apiserver-will-wait-for-active-watch-requests-to-drain-during-the-graceful-server-shutdown-window-)
 - [kube-controller-manager timer](#kube-controller-manager-timer)
-  - [|| route-reconciliation-period  | The period for reconciling routes created for Nodes by cloud provider. | 10s ||](#-route-reconciliation-period---the-period-for-reconciling-routes-created-for-nodes-by-cloud-provider--10s-)
 - [kube-scheduler timer](#kube-scheduler-timer)
-  - [|| log-flush-frequency | Maximum number of seconds between log flushes | 5s ||](#-log-flush-frequency--maximum-number-of-seconds-between-log-flushes--5s-)
 - [kube-proxy timer](#kube-proxy-timer)
-  - [|| ipvs-udp-timeout | 	The timeout for IPVS UDP packets, 0 to leave as-is. (e.g. '5s', '1m', '2h22m'). |||](#-ipvs-udp-timeout--the-timeout-for-ipvs-udp-packets-0-to-leave-as-is-eg-5s-1m-2h22m-)
 
 
 # Kubernetes Timer Summary
@@ -63,6 +59,7 @@ this page is list all timer that kubernetes used
 | apiserver | service-account-max-token-expiration | The maximum validity duration of a token created by the service account token issuer. If an otherwise valid TokenRequest with a validity duration larger than this value is requested, a token will be issued with a validity duration of this value. |||
 | apiserver | shutdown-delay-duration | Time to delay the termination. During that time the server keeps serving requests normally. The endpoints /healthz and /livez will return success, but /readyz immediately returns failure. Graceful termination starts after this delay has elapsed. This can be used to allow load balancer to stop sending traffic to this server. |||
 | apiserver | shutdown-watch-termination-grace-period | This option, if set, represents the maximum amount of grace period the apiserver will wait for active watch request(s) to drain during the graceful server shutdown window. |||
+
 ---
 
 # kube-controller-manager timer
@@ -92,6 +89,7 @@ this page is list all timer that kubernetes used
 || node-startup-grace-period  | Amount of time which we allow starting Node to be unresponsive before marking it unhealthy. | 1m0s ||
 || resource-quota-sync-period | The period for syncing quota usage status in the system | 5m0s ||
 || route-reconciliation-period  | The period for reconciling routes created for Nodes by cloud provider. | 10s ||
+
 ------
 
 # kube-scheduler timer
@@ -105,6 +103,7 @@ this page is list all timer that kubernetes used
 ||leader-elect-renew-deadline | 	The interval between attempts by the acting master to renew a leadership slot before it stops leading. This must be less than the lease duration. This is only applicable if leader election is enabled. | 10s ||
 || leader-elect-retry-period | The duration the clients should wait between attempting acquisition and renewal of a leadership. This is only applicable if leader election is enabled. | 2s ||
 || log-flush-frequency | Maximum number of seconds between log flushes | 5s ||
+
 ---
 
 
@@ -120,6 +119,7 @@ this page is list all timer that kubernetes used
 || ipvs-tcp-timeout | The timeout for idle IPVS TCP connections, 0 to leave as-is. (e.g. '5s', '1m', '2h22m'). |||
 || ipvs-tcpfin-timeout | The timeout for IPVS TCP connections after receiving a FIN packet, 0 to leave as-is. (e.g. '5s', '1m', '2h22m'). |||
 || ipvs-udp-timeout | 	The timeout for IPVS UDP packets, 0 to leave as-is. (e.g. '5s', '1m', '2h22m'). |||
+
 ---
 
 
