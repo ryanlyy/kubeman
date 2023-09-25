@@ -163,6 +163,9 @@ above two data are used by CNF pod which has connection with kube-apiserver
 
 After renew kubetenetes certificate including root-ca cert and restart kubelet, kube-controller manager, CNF pod does not need to be restarted. but in the phase of renewal, the communication between CNF and apiserver may be broken
 
+CRITICAL NOTE: 
+
+every Application needs to reload ca.crt and token when talking to kube-apiserver --- https://github.com/kubernetes/kubernetes/issues/119483
 
 # Envoy Certificate 
 * TLS w/o validating ceraticate
