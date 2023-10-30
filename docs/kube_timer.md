@@ -1,2 +1,0 @@
-Describe all Kubernetes Timer
----
