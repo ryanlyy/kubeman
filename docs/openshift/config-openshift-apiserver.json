@@ -1,0 +1,97 @@
+{
+    "apiServerArguments": {
+        "audit-log-format": [
+            "json"
+        ],
+        "audit-log-maxbackup": [
+            "10"
+        ],
+        "audit-log-maxsize": [
+            "100"
+        ],
+        "audit-log-path": [
+            "/var/log/openshift-apiserver/audit.log"
+        ],
+        "audit-policy-file": [
+            "/var/run/configmaps/audit/policy.yaml"
+        ],
+        "etcd-healthcheck-timeout": [
+            "9s"
+        ],
+        "etcd-readycheck-timeout": [
+            "9s"
+        ],
+        "feature-gates": [
+            "AdminNetworkPolicy=false",
+            "AdmissionWebhookMatchConditions=false",
+            "AlibabaPlatform=true",
+            "AutomatedEtcdBackup=false",
+            "AzureWorkloadIdentity=true",
+            "BuildCSIVolumes=true",
+            "CSIDriverSharedResource=false",
+            "CloudDualStackNodeIPs=true",
+            "DynamicResourceAllocation=false",
+            "EventedPLEG=false",
+            "ExternalCloudProvider=false",
+            "ExternalCloudProviderAzure=true",
+            "ExternalCloudProviderExternal=true",
+            "ExternalCloudProviderGCP=false",
+            "GCPLabelsTags=false",
+            "GatewayAPI=false",
+            "InsightsConfigAPI=false",
+            "MachineAPIOperatorDisableMachineHealthCheckController=false",
+            "MachineAPIProviderOpenStack=false",
+            "MaxUnavailableStatefulSet=false",
+            "NodeSwap=false",
+            "OpenShiftPodSecurityAdmission=false",
+            "PrivateHostedZoneAWS=true",
+            "RetroactiveDefaultStorageClass=false",
+            "RouteExternalCertificate=false",
+            "SigstoreImageVerification=false",
+            "VSphereStaticIPs=false",
+            "ValidatingAdmissionPolicy=false"
+        ],
+        "shutdown-delay-duration": [
+            "15s"
+        ],
+        "shutdown-send-retry-after": [
+            "true"
+        ]
+    },
+    "apiServers": {
+        "perGroupOptions": []
+    },
+    "apiVersion": "openshiftcontrolplane.config.openshift.io/v1",
+    "imagePolicyConfig": {
+        "externalRegistryHostnames": [
+            "default-route-openshift-image-registry.apps.ce0128.tre.nsn-rdnet.net"
+        ],
+        "internalRegistryHostname": "image-registry.openshift-image-registry.svc:5000"
+    },
+    "kind": "OpenShiftAPIServerConfig",
+    "projectConfig": {
+        "projectRequestMessage": ""
+    },
+    "routingConfig": {
+        "subdomain": "apps.ce0128.tre.nsn-rdnet.net"
+    },
+    "servingInfo": {
+        "bindNetwork": "tcp",
+        "cipherSuites": [
+            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+            "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+            "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
+        ],
+        "minTLSVersion": "VersionTLS12"
+    },
+    "storageConfig": {
+        "urls": [
+            "https://100.74.45.249:2379",
+            "https://100.74.45.70:2379",
+            "https://100.74.47.231:2379"
+        ]
+    }
+}
