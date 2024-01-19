@@ -218,8 +218,10 @@ node   0   1
 reservedSystemCPUs: "0-1,6-7,12-13,18-19"
 ```
 based on above configuration:
+```
 numa0 avaiable cpus: 2, 3, 4,   5,   14, 15, 16, 17
 numa1 availabe cpus: 8, 9, 10, 11,   20, 21, 22, 23
+```
 
 ## --topology-manager-scope=pod
 * case1: pod with c1 5 cpus GQoS and c2 5 cpus GQoS
@@ -293,7 +295,7 @@ numa1 availabe cpus: 8, 9, 10, 11,   20, 21, 22, 23
   node 1 cpus: 6 7 8 9 10 11 18 19 20 21 22 23
 
   node0 available cpus: 2, 3, 14, 15, 
-  node1 available cpus: 8, 9, 10, 11, 18 19 20 21 22 23
+  node1 available cpus: 8, 9, 10, 11, 20 21 22 23
   ```
 
   Result: successfully up but c1 is pinned to numa1
