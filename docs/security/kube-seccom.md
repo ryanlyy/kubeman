@@ -29,6 +29,16 @@ https://github.com/moby/moby/blob/master/profiles/seccomp/default.json
 ```
 [CRIO runtime/default seccomp](crio-seccomp.json)
 
+CRIO use below seccomp DefaultProfile when below configuration not configured
+https://github.com/containers/common/blob/v0.57/pkg/seccomp/default_linux.go
+
+```crio.conf
+# Path to the seccomp.json profile which is used as the default seccomp profile
+# for the runtime. If not specified, then the internal default seccomp profile
+# will be used. This option supports live configuration reload.
+# seccomp_profile = ""
+```
+
 # containerd default
 https://github.com/containerd/cri/blob/master/vendor/github.com/containerd/containerd/contrib/seccomp/seccomp_default.go
 
