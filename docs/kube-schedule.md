@@ -14,6 +14,7 @@ Scheduling Preemption and Eviction
 - [Test Cases](#test-cases)
   - [--topology-manager-scope=pod](#--topology-manager-scopepod)
   - [--topology-manager-scope=conainer (default)](#--topology-manager-scopeconainer-default)
+- [How kubelet affinity CPU](#how-kubelet-affinity-cpu)
 - [Kubernetes Scheduler](#kubernetes-scheduler)
 - [Assigning Pods to Nodes](#assigning-pods-to-nodes)
   - [NodeSelector](#nodeselector)
@@ -303,7 +304,202 @@ numa1 availabe cpus: 8, 9, 10, 11,   20, 21, 22, 23
   ```bash
   {"policyName":"static","defaultCpuSet":"0-1,4-7,11-13,16-19,22-23","entries":{"970925e3-c85b-491c-af5a-ab24681d68ef":{"mytestclient":"8-10,20-21","mytestclient2":"2-3,14-15"}},"checksum":1830434018}
   ```
-  
+# How kubelet affinity CPU
+
+```
+whatever it is single-numa-node or not, cpus allocation order:
+1. if there is enough vcpus in single numa, it will allocate vcpus to container within single numa
+2. if there is not enough vcpus in single numa, and if single-numa-node configured, then it trigger topologyAffinityError
+3. if numCPUs > 1, then first allocated physical call and then logical core from numa0 to numa1
+```
+
+![CPU Affinity Example](cpu_affinity.png)
+
+```golang
+func (p *staticPolicy) Allocate(s state.State, pod *v1.Pod, container *v1.Container) (rerr error) {
+    // Get CPU request/limit
+    // if not guraranteedCPUs, return 0
+    // if cpus not integer return 0
+    numCPUs := p.guaranteedCPUs(pod, container)
+    //CPUManagerPolicyOptions = full-pcpus-only //1.22 or higher beta visiber by default)
+    if p.options.FullPhysicalCPUsOnly {
+                //topo.NumCPUs / topo.NumCores
+                CPUsPerCore := p.topology.CPUsPerCore()
+                // if CPUsPerCore is 2(hyperthreading enabled), then only even numCPUS can be allocated, odd numCPUS will trigger SMTAlighmentError
+                if (numCPUs % CPUsPerCore) != 0 {
+                        // Since CPU Manager has been enabled requesting strict SMT alignment, it means a guaranteed pod can only be admitted
+                        // if the CPU requested is a multiple of the number of virtual cpus per physical cores.
+                        // In case CPU request is not a multiple of the number of virtual cpus per physical cores the Pod will be put
+                        // in Failed state, with SMTAlignmentError as reason. Since the allocation happens in terms of physical cores
+                        // and the scheduler is responsible for ensuring that the workload goes to a node that has enough CPUs,
+                        // the pod would be placed on a node where there are enough physical cores available to be allocated.
+                        // Just like the behaviour in case of static policy, takeByTopology will try to first allocate CPUs from the same socket
+                        // and only in case the request cannot be sattisfied on a single socket, CPU allocation is done for a workload to occupy all
+                        // CPUs on a physical core. Allocation of individual threads would never have to occur.
+                        return SMTAlignmentError{
+                                RequestedCPUs: numCPUs,
+                                CpusPerCore:   CPUsPerCore,
+                        }
+                }
+                //numCPU is even integer
+                availablePhysicalCPUs := p.GetAvailablePhysicalCPUs(s).Size()
+
+                // It's legal to reserve CPUs which are not core siblings. In this case the CPU allocator can descend to single cores
+                // when picking CPUs. This will void the guarantee of FullPhysicalCPUsOnly. To prevent this, we need to additionally consider
+                // all the core siblings of the reserved CPUs as unavailable when computing the free CPUs, before to start the actual allocation.
+                // This way, by construction all possible CPUs allocation whose number is multiple of the SMT level are now correct again.
+                if numCPUs > availablePhysicalCPUs {
+                        return SMTAlignmentError{
+                                RequestedCPUs:         numCPUs,
+                                CpusPerCore:           CPUsPerCore,
+                                AvailablePhysicalCPUs: availablePhysicalCPUs,
+                        }
+                }
+        }
+        if cpuset, ok := s.GetCPUSet(string(pod.UID), container.Name); ok {
+                p.updateCPUsToReuse(pod, container, cpuset)
+                klog.InfoS("Static policy: container already present in state, skipping", "pod", klog.KObj(pod), "containerName", container.Name)
+                return nil
+        }
+        // Call Topology Manager to get the aligned socket affinity across all hint providers.
+        hint := p.affinity.GetAffinity(string(pod.UID), container.Name)
+        klog.InfoS("Topology Affinity", "pod", klog.KObj(pod), "containerName", container.Name, "affinity", hint)
+
+        // Allocate CPUs according to the NUMA affinity contained in the hint.
+        cpuset, err := p.allocateCPUs(s, numCPUs, hint.NUMANodeAffinity, p.cpusToReuse[string(pod.UID)])
+        if err != nil {
+                klog.ErrorS(err, "Unable to allocate CPUs", "pod", klog.KObj(pod), "containerName", container.Name, "numCPUs", numCPUs)
+                return err
+        }
+        //affinity cpu
+        s.SetCPUSet(string(pod.UID), container.Name, cpuset)
+        p.updateCPUsToReuse(pod, container, cpuset)
+
+        return nil
+```
+
+```golang
+func (p *staticPolicy) allocateCPUs(s state.State, numCPUs int, numaAffinity bitmask.BitMask, reusableCPUs cpuset.CPUSet) (cpuset.CPUSet, error) {
+        klog.InfoS("AllocateCPUs", "numCPUs", numCPUs, "socket", numaAffinity)
+
+        allocatableCPUs := p.GetAvailableCPUs(s).Union(reusableCPUs)
+        // If there are aligned CPUs in numaAffinity, attempt to take those first.
+        result := cpuset.New()
+        //topologyMangerPolicy = single-numa-node
+        if numaAffinity != nil {
+                alignedCPUs := p.getAlignedCPUs(numaAffinity, allocatableCPUs)
+
+                numAlignedToAlloc := alignedCPUs.Size()
+                if numCPUs < numAlignedToAlloc {
+                        numAlignedToAlloc = numCPUs
+                }
+
+                alignedCPUs, err := p.takeByTopology(alignedCPUs, numAlignedToAlloc)
+                if err != nil {
+                        return cpuset.New(), err
+                }
+
+                result = result.Union(alignedCPUs)
+        }
+
+        // Get any remaining CPUs from what's leftover after attempting to grab aligned ones.
+        remainingCPUs, err := p.takeByTopology(allocatableCPUs.Difference(result), numCPUs-result.Size())
+        if err != nil {
+                return cpuset.New(), err
+        }
+        result = result.Union(remainingCPUs)
+
+        // Remove allocated CPUs from the shared CPUSet.
+        s.SetDefaultCPUSet(s.GetDefaultCPUSet().Difference(result))
+
+        klog.InfoS("AllocateCPUs", "result", result)
+        return result, nil
+}
+
+```
+
+```golang
+// getAlignedCPUs return set of aligned CPUs based on numa affinity mask and configured policy options.
+func (p *staticPolicy) getAlignedCPUs(numaAffinity bitmask.BitMask, allocatableCPUs cpuset.CPUSet) cpuset.CPUSet {
+        alignedCPUs := cpuset.New()
+        numaBits := numaAffinity.GetBits()
+
+        // If align-by-socket policy option is enabled, NUMA based hint is expanded to
+        // socket aligned hint. It will ensure that first socket aligned available CPUs are
+        // allocated before we try to find CPUs across socket to satisfy allocation request.
+        if p.options.AlignBySocket {
+                socketBits := p.topology.CPUDetails.SocketsInNUMANodes(numaBits...).UnsortedList()
+                for _, socketID := range socketBits {
+                        alignedCPUs = alignedCPUs.Union(allocatableCPUs.Intersection(p.topology.CPUDetails.CPUsInSockets(socketID)))
+                }
+                return alignedCPUs
+        }
+
+        for _, numaNodeID := range numaBits {
+                alignedCPUs = alignedCPUs.Union(allocatableCPUs.Intersection(p.topology.CPUDetails.CPUsInNUMANodes(numaNodeID)))
+        }
+
+        return alignedCPUs
+}
+
+```
+```golang
+func (p *staticPolicy) takeByTopology(availableCPUs cpuset.CPUSet, numCPUs int) (cpuset.CPUSet, error) {
+        //cpuManagerPolicyOption = distribute-cpus-across-numa
+        if p.options.DistributeCPUsAcrossNUMA {
+                cpuGroupSize := 1
+                if p.options.FullPhysicalCPUsOnly {
+                        cpuGroupSize = p.topology.CPUsPerCore()
+                }
+                return takeByTopologyNUMADistributed(p.topology, availableCPUs, numCPUs, cpuGroupSize)
+        }
+        return takeByTopologyNUMAPacked(p.topology, availableCPUs, numCPUs)
+}
+
+func takeByTopologyNUMAPacked(topo *topology.CPUTopology, availableCPUs cpuset.CPUSet, numCPUs int) (cpuset.CPUSet, error) {
+        acc := newCPUAccumulator(topo, availableCPUs, numCPUs)
+        if acc.isSatisfied() {
+                return acc.result, nil
+        }
+        if acc.isFailed() {
+                return cpuset.New(), fmt.Errorf("not enough cpus available to satisfy request: requested=%d, available=%d", numCPUs, availableCPUs.Size())
+        }
+
+        // Algorithm: topology-aware best-fit
+        // 1. Acquire whole NUMA nodes and sockets, if available and the container
+        //    requires at least a NUMA node or socket's-worth of CPUs. If NUMA
+        //    Nodes map to 1 or more sockets, pull from NUMA nodes first.
+        //    Otherwise pull from sockets first.
+        acc.numaOrSocketsFirst.takeFullFirstLevel()
+        if acc.isSatisfied() {
+                return acc.result, nil
+        }
+        acc.numaOrSocketsFirst.takeFullSecondLevel()
+        if acc.isSatisfied() {
+                return acc.result, nil
+        }
+
+        // 2. Acquire whole cores, if available and the container requires at least
+        //    a core's-worth of CPUs.
+        acc.takeFullCores()
+        if acc.isSatisfied() {
+                return acc.result, nil
+        }
+
+        // 3. Acquire single threads, preferring to fill partially-allocated cores
+        //    on the same sockets as the whole cores we have already taken in this
+        //    allocation.
+        acc.takeRemainingCPUs()
+        if acc.isSatisfied() {
+                return acc.result, nil
+        }
+
+        return cpuset.New(), fmt.Errorf("failed to allocate cpus")
+}
+
+```
+
+
 # Kubernetes Scheduler
 # Assigning Pods to Nodes
 ## NodeSelector
